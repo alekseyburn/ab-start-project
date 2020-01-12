@@ -1,0 +1,25 @@
+{
+  "name": "ab-start-project",
+  "version": "1.0.0",
+  "description": "Установка: выполнить в папке проекта: `npm i`.",
+  "main": "gulpfile.js",
+  "dependencies": {},
+  "devDependencies": {
+    "cssnano": "^4.1.10",
+    "del": "^5.1.0",
+    "gulp": "^4.0.2",
+    "gulp-postcss": "^8.0.0",
+    "gulp-rename": "^2.0.0",
+    "gulp-sass": "^4.0.2",
+    "gulp-sourcemaps": "^2.6.5"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com//alekseyburn/ab-start-project.git"
+  },
+  "author": "Aleksey Korshakov",
+  "license": "ISC"
+}
