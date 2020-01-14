@@ -8,6 +8,12 @@ const postcss = require('gulp-postcss');  //преобразование и оп
 const cssnano = require('cssnano'); //минификация css
 const rename = require('gulp-rename');  //переименовывание файлов
 const gulpIf = require('gulp-if');  //создание условий
+const imagemin = require('gulp-imagemin');  //оптимизация изображений
+const mozjpeg = require('imagemin-mozjpeg');  //сжатие jpeg
+const pngquant = require('imagemin-pngquant');  //сжатие png
+const svgstore = require('gulp-svgstore');  //создание спрайта
+const cheerio = require('gulp-cheerio'); //удаление ненужных параметров в svg
+const path = require('path');
 
 
 const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
@@ -37,8 +43,45 @@ gulp.task('css', () => {
     .pipe(gulp.dest('build/css'));
 });
 
-gulp.task('clean:build', () => del('build'));
-gulp.task('build', gulp.series('clean:build', gulp.parallel('css', 'copy:css')));
+gulp.task('img', () => {
+  return gulp.src('src/img/**/*.{jpg,jpeg,png,svg}')
+    .pipe(imagemin([
+      imagemin.svgo({
+        plugins: [{
+          removeViewBox: false
+        }]
+      }),
+      mozjpeg({ quality: 80 }),
+      pngquant({
+        quality: [0.5, 0.8],
+        floyd: 1,
+        speed: 1
+      })
+    ]))
+    .pipe(gulp.dest('build/img'));
+});
 
-gulp.watch('src/sass/**/*.scss', gulp.series('scss'));
-gulp.watch('src/css/*.css', gulp.series('copy:css'));
+gulp.task('sprite:svg', () => {
+  return gulp.src('src/img/{icon,logo}-*.svg')
+    .pipe(imagemin([
+      imagemin.svgo({
+        plugins: [{
+          cleanupIDs: {
+            minify: true
+          }
+        }]
+      })
+    ]))
+    .pipe(svgstore({ inlineSvg: true }))
+    .pipe(cheerio(($) => {
+      $('svg').attr('style', 'display: none');
+    }))
+    .pipe(rename('sprite.svg'))
+    .pipe(gulp.dest('build/img'))
+})
+
+gulp.task('clean', () => del('build'));
+gulp.task('build', gulp.series('clean', gulp.parallel('css', 'copy:css', 'img', 'sprite:svg')));
+
+// gulp.watch('src/sass/**/*.scss', gulp.series('scss'));
+// gulp.watch('src/css/*.css', gulp.series('copy:css'));
