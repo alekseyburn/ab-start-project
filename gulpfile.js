@@ -14,8 +14,9 @@ const pngquant = require('imagemin-pngquant');  //сжатие png
 const svgstore = require('gulp-svgstore');  //создание спрайта
 const cheerio = require('gulp-cheerio'); //удаление ненужных параметров в svg
 const newer = require('gulp-newer'); //запускает задачи только для обновившихся файлов
-// const browserslist = require('browserslist'); //единый конфиг autoprefixer, babel и stylelint
 const autoprefixer = require('autoprefixer'); //автопрефиксы
+const browserSync = require('browser-sync').create();
+// const browserslist = require('browserslist'); //единый конфиг autoprefixer, babel и stylelint
 // const path = require('path');
 
 const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
@@ -92,4 +93,19 @@ gulp.task('watch', () => {
 
 gulp.task('clean', () => del('build'));
 gulp.task('build', gulp.series('clean', gulp.parallel('css', 'copy:css', 'img', 'sprite:svg')));
+gulp.task('serve', () => {
+  gulp.series('build');
+  browserSync.init({
+    server: 'build',
+    notify: false,
+    open: true,
+    cors: true,
+    ui: false,
+  });
 
+  browserSync.watch('build/**/*.*').on('change', browserSync.reload);
+});
+
+gulp.task('default',
+  gulp.series('build', gulp.parallel('watch', 'serve'))
+);
