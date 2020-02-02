@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Установка: выполнить в папке проекта: `npm i`.",
   "main": "gulpfile.js",
-  "dependencies": {},
+  "dependencies": {
+    "csscomb": "^4.3.0"
+  },
   "devDependencies": {
     "cssnano": "^4.1.10",
     "del": "^5.1.0",

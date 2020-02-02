@@ -78,7 +78,13 @@ gulp.task('sprite:svg', () => {
     }))
     .pipe(rename('sprite.svg'))
     .pipe(gulp.dest('build/img'))
-})
+});
+
+gulp.task('watch', () => {
+  gulp.watch('src/sass/**/*.scss', gulp.series('css'));
+  gulp.watch('src/css/*.css', gulp.series('copy:css'));
+  gulp.watch('src/img/*.{jpg,jpeg,gif,png,svg}', gulp.series('img'));
+});
 
 gulp.task('clean', () => del('build'));
 gulp.task('build', gulp.series('clean', gulp.parallel('css', 'copy:css', 'img', 'sprite:svg')));
