@@ -13,6 +13,7 @@ const mozjpeg = require('imagemin-mozjpeg');  //сжатие jpeg
 const pngquant = require('imagemin-pngquant');  //сжатие png
 const svgstore = require('gulp-svgstore');  //создание спрайта
 const cheerio = require('gulp-cheerio'); //удаление ненужных параметров в svg
+const newer = require('gulp-newer'); //запускает задачи только для обновившихся файлов
 const path = require('path');
 
 
@@ -44,7 +45,8 @@ gulp.task('css', () => {
 });
 
 gulp.task('img', () => {
-  return gulp.src('src/img/**/*.{jpg,jpeg,png,svg}')
+  return gulp.src('src/img/**/*.{jpg,jpeg,png,svg}', {since: gulp.lastRun('img')}) //только для изменившихся с последнего запуска
+    .pipe(newer('build/img')) //оставить в потоке только изменившиеся файлы
     .pipe(imagemin([
       imagemin.svgo({
         plugins: [{
