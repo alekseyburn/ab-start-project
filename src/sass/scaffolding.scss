@@ -1,0 +1,33 @@
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+html {
+  box-sizing: border-box;
+}
+
+a {
+  text-decoration: none;
+}
+
+img {
+  width: 100%;
+  height: auto;
+}
+
+body {
+  min-width: $mobile-width;
+  margin: 0 auto;
+
+  font-weight: normal;
+  font-size: 10px;
+  line-height: 150%;
+  font-family: $font;
+  color: $main-text;
+
+  background-color: $main-bg;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
