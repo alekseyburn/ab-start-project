@@ -16,6 +16,10 @@ const cheerio = require('gulp-cheerio'); //удаление ненужных п�
 const newer = require('gulp-newer'); //запускает задачи только для обновившихся файлов
 const autoprefixer = require('autoprefixer'); //автопрефиксы
 const browserSync = require('browser-sync').create();
+const uglify = require('gulp-uglify'); //минификация js
+const concat = require('gulp-concat'); //объединение файлов в один
+
+
 // const browserslist = require('browserslist'); //единый конфиг autoprefixer, babel и stylelint
 // const path = require('path');
 
@@ -36,7 +40,7 @@ gulp.task('copy:css', () => {
 
 gulp.task('css', () => {
   return gulp.src('src/sass/style.scss')
-    .pipe(gulpIf(isDev,sourcemaps.init()))
+    .pipe(gulpIf(isDev, sourcemaps.init()))
     .pipe(sass())
     .pipe(postcss([
       autoprefixer(),
@@ -45,6 +49,15 @@ gulp.task('css', () => {
     .pipe(rename('style.min.css'))
     .pipe(gulpIf(isDev, sourcemaps.write('.')))
     .pipe(gulp.dest('build/css'));
+});
+
+gulp.task('js', () => {
+  return gulp.src('src/js/**/*.js')
+    .pipe(gulpIf(isDev, sourcemaps.init()))
+    .pipe(concat('script.min.js'))
+    .pipe(uglify())
+    .pipe(gulpIf(isDev, sourcemaps.write('.')))
+    .pipe(gulp.dest('build/js'));
 });
 
 gulp.task('img', () => {
@@ -89,10 +102,11 @@ gulp.task('watch', () => {
   gulp.watch('src/sass/**/*.scss', gulp.series('css'));
   gulp.watch('src/css/*.css', gulp.series('copy:css'));
   gulp.watch('src/img/*.{jpg,jpeg,gif,png,svg}', gulp.series('img'));
+  gulp.watch('src/js/**/*.js', gulp.series('js'));
 });
 
 gulp.task('clean', () => del('build'));
-gulp.task('build', gulp.series('clean', gulp.parallel('css', 'copy:css', 'img', 'sprite:svg')));
+gulp.task('build', gulp.series('clean', gulp.parallel('css', 'copy:css', 'img', 'sprite:svg', 'js')));
 gulp.task('serve', () => {
   gulp.series('build');
   browserSync.init({
