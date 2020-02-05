@@ -18,6 +18,7 @@ const autoprefixer = require('autoprefixer'); //автопрефиксы
 const browserSync = require('browser-sync').create();
 const uglify = require('gulp-uglify'); //минификация js
 const concat = require('gulp-concat'); //объединение файлов в один
+const mqpacker = require('css-mqpacker'); //конкатенация mediaquery's
 
 
 // const browserslist = require('browserslist'); //единый конфиг autoprefixer, babel и stylelint
@@ -44,6 +45,7 @@ gulp.task('css', () => {
     .pipe(sass())
     .pipe(postcss([
       autoprefixer(),
+      mqpacker(),
       cssnano(),
     ]))
     .pipe(rename('style.min.css'))
