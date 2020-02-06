@@ -29,6 +29,8 @@ const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
 gulp.task('copy:css', () => {
   return gulp.src('src/css/*.css', {since: gulp.lastRun('copy:css')})
     .pipe(postcss([
+      autoprefixer(),
+      mqpacker(),
       cssnano({
         discardUnused: false  //не удалять неиспользуемые классы
       })
