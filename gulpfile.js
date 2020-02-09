@@ -21,14 +21,13 @@ const concat = require('gulp-concat'); //объединение файлов в 
 const mqpacker = require('css-mqpacker'); //конкатенация mediaquery's
 const fs = require('fs');
 
+// Получение настроек папок из package.json
+const pjson = require('./package.json');
+const dirs = pjson.config.directories;
 
-// const browserslist = require('browserslist'); //единый конфиг autoprefixer, babel и stylelint
 // const path = require('path');
 
 const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
-
-//Расположение папки с компонентами
-const componentsFolder = './src/blocks/';
 
 let components = getComponentsFiles();
 console.log('---------- Список добавочных js/css-файлов и адресов картинок для копирования');
@@ -47,11 +46,11 @@ gulp.task('copy:css', () => {
     .pipe(rename((path) => {
       path.extname = '.min.css'
     }))
-    .pipe(gulp.dest('./build/css'));
+    .pipe(gulp.dest(dirs.build + '/css'));
 });
 
 gulp.task('scss', () => {
-  return gulp.src('./src/sass/style.scss')
+  return gulp.src(dirs.source + '/sass/style.scss')
     .pipe(gulpIf(isDev, sourcemaps.init()))
     .pipe(sass())
     .pipe(postcss([
@@ -61,7 +60,7 @@ gulp.task('scss', () => {
     ]))
     .pipe(rename('style.min.css'))
     .pipe(gulpIf(isDev, sourcemaps.write('.')))
-    .pipe(gulp.dest('./build/css'));
+    .pipe(gulp.dest(dirs.build + '/css'));
 });
 
 gulp.task('js', () => {
@@ -70,12 +69,12 @@ gulp.task('js', () => {
     .pipe(concat('script.min.js'))
     .pipe(uglify())
     .pipe(gulpIf(isDev, sourcemaps.write('.')))
-    .pipe(gulp.dest('./build/js'));
+    .pipe(gulp.dest(dirs.build + '/js'));
 });
 
 gulp.task('img', () => {
   return gulp.src(components.img, {since: gulp.lastRun('img')}) //только для изменившихся с последнего запуска
-    .pipe(newer('./build/img')) //оставить в потоке только изменившиеся файлы
+    .pipe(newer(dirs.build + '/img')) //оставить в потоке только изменившиеся файлы
     .pipe(imagemin([
       imagemin.svgo({
         plugins: [{
@@ -89,11 +88,11 @@ gulp.task('img', () => {
         speed: 1
       })
     ]))
-    .pipe(gulp.dest('./build/img'));
+    .pipe(gulp.dest(dirs.build + '/img'));
 });
 
 gulp.task('sprite:svg', () => {
-  return gulp.src('./src/img/{icon,logo}-*.svg')
+  return gulp.src(dirs.source + '/img/{icon,logo}-*.svg')
     .pipe(imagemin([
       imagemin.svgo({
         plugins: [{
@@ -108,29 +107,41 @@ gulp.task('sprite:svg', () => {
       $('svg').attr('style', 'display: none');
     }))
     .pipe(rename('sprite.svg'))
-    .pipe(gulp.dest('./build/img'))
+    .pipe(gulp.dest(dirs.build + '/img'))
 });
 
 gulp.task('watch', () => {
-  gulp.watch('./src/**/*.scss', gulp.series('scss'));
-  gulp.watch('./src/css/*.css', gulp.series('copy:css'));
-  gulp.watch('./src/**/img/*.{jpg,jpeg,png,svg}', gulp.series('img'));
-  gulp.watch('./src/**/*.js', gulp.series('js'));
+  gulp.watch([
+    dirs.source + '/sass/**/*.scss',
+    dirs.blocks + '/**/*.scss',
+  ], gulp.series('scss'));
+  gulp.watch([
+    dirs.source + '/css/*.css',
+    dirs.blocks + '/**/*.css',
+  ], gulp.series('copy:css'));
+  gulp.watch([
+    dirs.source + '/img/*.{jpg,jpeg,png,svg}',
+    dirs.blocks + '/**/img/*.{jpg,jpeg,png,svg}',
+  ], gulp.series('img'));
+  gulp.watch([
+    dirs.source + '/**/*.js',
+    dirs.blocks + '/**/*.js',
+  ], gulp.series('js'));
 });
 
-gulp.task('clean', () => del('./build/**/*'));
+gulp.task('clean', () => del(dirs.build + '/**/*'));
 gulp.task('build', gulp.series('clean', gulp.parallel('scss', 'copy:css', 'img', 'sprite:svg', 'js')));
 gulp.task('serve', () => {
   gulp.series('build');
   browserSync.init({
-    server: './build',
+    server: dirs.build,
     notify: false,
     open: true,
     cors: true,
     ui: false,
   });
 
-  browserSync.watch(['./build/**/*.*', '!./build/**/*.map.*']).on('change', browserSync.reload);
+  browserSync.watch([dirs.build + '/**/*.*', '!' + dirs.build + '/**/*.map.*']).on('change', browserSync.reload);
 });
 
 gulp.task('default',
@@ -147,12 +158,11 @@ function getComponentsFiles() {
     css: [], // тут будут CSS-файлы компонент в том же порядке, в котором подключены scss-файлы
   };
   // Читаем файл диспетчера подключений
-  let connectManager = fs.readFileSync('./src/sass/style.scss', 'utf8');
+  let connectManager = fs.readFileSync(dirs.source + '/sass/style.scss', 'utf8');
   // Фильтруем массив, оставляя только строки с незакомментированными импортами
   let fileSystem = connectManager.split('\n').filter((item) => {
     return /^(\s*)@import/.test(item);
   });
-  console.log(fileSystem);
   // Обойдём массив и запишем его части в объект результирующей переменной
   fileSystem.forEach((item) => {
     // Попробуем вычленить компонент из строки импорта
@@ -164,9 +174,9 @@ function getComponentsFiles() {
       // Имя подключаемого файла без расширения
       let componentFileName = componentData[3];
       // Имя JS-файла, который нужно взять в сборку в этой итерации, если он существует
-      let jsFile = componentsFolder + componentName + '/' + componentFileName + '.js';
+      let jsFile = dirs.blocks + '/' + componentName + '/' + componentFileName + '.js';
       // Имя CSS-файла, который нужно взять в сборку в этой итерации, если он существует
-      let cssFile = componentsFolder + componentName + '/' + componentFileName + '.css';
+      let cssFile = dirs.blocks + '/' + componentName + '/' + componentFileName + '.css';
       // Если существует js-файл - берем его в массив
       if (fileExist(jsFile)) {
         componentsFilesList.js.push(jsFile);
@@ -176,20 +186,20 @@ function getComponentsFiles() {
         componentsFilesList.css.push(cssFile);
       }
       // Берем в массив изображения
-      componentsFilesList.img.push(componentsFolder + componentName + '/img/*.{jpg,jpeg,png,svg}');
+      componentsFilesList.img.push(dirs.blocks + '/' + componentName + '/img/*.{jpg,jpeg,png,svg}');
     }
   });
 
   // Добавим глобальный JS-файл в начало массива с обрабатываемыми JS-файлами
-  if(fileExist('./src/js/global_script.js')) {
-    componentsFilesList.js.unshift('./src/js/global_script.js');
+  if(fileExist(dirs.source + '/js/global_script.js')) {
+    componentsFilesList.js.unshift(dirs.source + '/js/global_script.js');
   }
   // Добавим глобальный CSS-файл в начало массива с обрабатываемыми CSS-файлами
-  if(fileExist('./src/css/global_additional-css.css')) {
-    componentsFilesList.css.unshift('./src/css/global_additional-css.css');
+  if(fileExist(dirs.source + '/css/global_additional-css.css')) {
+    componentsFilesList.css.unshift(dirs.source + '/css/global_additional-css.css');
   }
   // Добавим глобальные изображения
-  componentsFilesList.img.unshift('./src/img/*.{jpg,jpeg,png,svg}');
+  componentsFilesList.img.unshift(dirs.source + '/img/*.{jpg,jpeg,png,svg}');
   componentsFilesList.img = uniqueArray(componentsFilesList.img);
   return componentsFilesList;
 }
