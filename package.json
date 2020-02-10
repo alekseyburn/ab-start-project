@@ -28,8 +28,16 @@
     "imagemin-mozjpeg": "^8.0.0",
     "imagemin-pngquant": "^8.0.0"
   },
+  "config": {
+    "directories": {
+      "source": "./src",
+      "build": "./build",
+      "blocks": "./src/blocks"
+    }
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "./node_modules/.bin/gulp"
   },
   "repository": {
     "type": "git",
