@@ -1,54 +1,43 @@
 'use strict';
 
 const gulp = require('gulp');
-const del = require('del'); //удаление файлов
-const sass = require('gulp-sass');  //компиляция scss
-const sourcemaps = require('gulp-sourcemaps');  //карты кода
-const postcss = require('gulp-postcss');  //преобразование и оптимизация css
-const cssnano = require('cssnano'); //минификация css
-const rename = require('gulp-rename');  //переименовывание файлов
-const gulpIf = require('gulp-if');  //создание условий
-const imagemin = require('gulp-imagemin');  //оптимизация изображений
-const mozjpeg = require('imagemin-mozjpeg');  //сжатие jpeg
-const pngquant = require('imagemin-pngquant');  //сжатие png
-const svgstore = require('gulp-svgstore');  //создание спрайта
-const cheerio = require('gulp-cheerio'); //удаление ненужных параметров в svg
-const newer = require('gulp-newer'); //запускает задачи только для обновившихся файлов
-const autoprefixer = require('autoprefixer'); //автопрефиксы
-const browserSync = require('browser-sync').create();
-const uglify = require('gulp-uglify'); //минификация js
-const concat = require('gulp-concat'); //объединение файлов в один
-const mqpacker = require('css-mqpacker'); //конкатенация mediaquery's
 const fs = require('fs');
+const path = require('path');
+const del = require('del'); //удаление файлов
+const rename = require('gulp-rename');  //переименовывание файлов
+const sourcemaps = require('gulp-sourcemaps');  //карты кода
+const gulpIf = require('gulp-if');  //создание условий
+const newer = require('gulp-newer'); //запускает задачи только для обновившихся файлов
+const browserSync = require('browser-sync').create();
 
 // Получение настроек папок из package.json
 const pjson = require('./package.json');
 const dirs = pjson.config.directories;
 
-// const path = require('path');
+const postcss = require('gulp-postcss');  //преобразование и оптимизация css, js
+const sass = require('gulp-sass');  //компиляция scss
+const cssnano = require('cssnano'); //минификация css
+const mqpacker = require('css-mqpacker'); //конкатенация mediaquery's
+const autoprefixer = require('autoprefixer'); //автопрефиксы
 
+const imagemin = require('gulp-imagemin');  //оптимизация изображений
+const mozjpeg = require('imagemin-mozjpeg');  //сжатие jpeg
+const pngquant = require('imagemin-pngquant');  //сжатие png
+const svgstore = require('gulp-svgstore');  //создание спрайта
+const cheerio = require('gulp-cheerio'); //удаление ненужных параметров в svg
+
+const uglify = require('gulp-uglify'); //минификация js
+const concat = require('gulp-concat'); //объединение файлов в один
+
+// Запуск `NODE_ENV=production npm start [задача]` приведет к сборке без sourcemaps
 const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
 
-let components = getComponentsFiles();
-console.log('---------- Список добавочных js/css-файлов и адресов картинок для копирования');
-console.log(components);
+// Файлы компилируемых компонентов
+let blocks = getComponentsFiles();
+console.log('---------- Список ресурсов');
+console.log(blocks);
 
-
-gulp.task('copy:css', () => {
-  return gulp.src(components.css, {since: gulp.lastRun('copy:css')})
-    .pipe(postcss([
-      autoprefixer(),
-      mqpacker(),
-      cssnano({
-        discardUnused: false  //не удалять неиспользуемые классы
-      })
-    ]))
-    .pipe(rename((path) => {
-      path.extname = '.min.css'
-    }))
-    .pipe(gulp.dest(dirs.build + '/css'));
-});
-
+// Компиляция SCSS
 gulp.task('scss', () => {
   return gulp.src(dirs.source + '/sass/style.scss')
     .pipe(gulpIf(isDev, sourcemaps.init()))
@@ -63,17 +52,31 @@ gulp.task('scss', () => {
     .pipe(gulp.dest(dirs.build + '/css'));
 });
 
-gulp.task('js', () => {
-  return gulp.src(components.js)
-    .pipe(gulpIf(isDev, sourcemaps.init()))
-    .pipe(concat('script.min.js'))
-    .pipe(uglify())
-    .pipe(gulpIf(isDev, sourcemaps.write('.')))
-    .pipe(gulp.dest(dirs.build + '/js'));
+// Копирование добавочных css
+gulp.task('copy:css', (cb) => {
+  if (blocks.additionalCss.length > 0) {
+    return gulp.src(blocks.additionalCss, {since: gulp.lastRun('copy:css')})
+      .pipe(postcss([
+        autoprefixer(),
+        mqpacker(),
+        cssnano({
+          discardUnused: false  //не удалять неиспользуемые классы
+        })
+      ]))
+      .pipe(rename((path) => {
+        path.basename = 'additional-styles';
+        path.extname = '.min.css'
+      }))
+      .pipe(gulp.dest(dirs.build + '/css'));
+  } else {
+    console.log('---------- Копирование CSS: нет дополнительного CSS');
+    cb();
+  }
 });
 
+// Копирование и оптимизация изображений
 gulp.task('img', () => {
-  return gulp.src(components.img, {since: gulp.lastRun('img')}) //только для изменившихся с последнего запуска
+  return gulp.src(blocks.img, {since: gulp.lastRun('img')}) //только для изменившихся с последнего запуска
     .pipe(newer(dirs.build + '/img')) //оставить в потоке только изменившиеся файлы
     .pipe(imagemin([
       imagemin.svgo({
@@ -81,7 +84,7 @@ gulp.task('img', () => {
           removeViewBox: false
         }]
       }),
-      mozjpeg({ quality: 80 }),
+      mozjpeg({quality: 80}),
       pngquant({
         quality: [0.5, 0.8],
         floyd: 1,
@@ -91,46 +94,77 @@ gulp.task('img', () => {
     .pipe(gulp.dest(dirs.build + '/img'));
 });
 
-gulp.task('sprite:svg', () => {
-  return gulp.src(dirs.source + '/img/{icon,logo}-*.svg')
-    .pipe(imagemin([
-      imagemin.svgo({
-        plugins: [{
-          cleanupIDs: {
-            minify: true
-          }
-        }]
-      })
-    ]))
-    .pipe(svgstore({ inlineSvg: true }))
-    .pipe(cheerio(($) => {
-      $('svg').attr('style', 'display: none');
-    }))
-    .pipe(rename('sprite.svg'))
-    .pipe(gulp.dest(dirs.build + '/img'))
+// Создание svg-спрайта
+gulp.task('sprite:svg', (cb) => {
+  let spritePath = dirs.source + '/img/svg-sprite/';
+  if (fileExist(spritePath) !== false) {
+    return gulp.src(spritePath + '*.svg')
+      .pipe(imagemin([
+        imagemin.svgo({
+          plugins: [{
+            cleanupIDs: {
+              minify: true
+            }
+          }]
+        })
+      ]))
+      .pipe(svgstore({inlineSvg: true}))
+      .pipe(cheerio(($) => {
+        $('svg').attr('style', 'display: none');
+      }))
+      .pipe(rename('sprite.svg'))
+      .pipe(gulp.dest(dirs.build + '/img'))
+  } else {
+    console.log('---------- Сборка SVG спрайта: нет папки с картинками');
+    cb();
+  }
 });
 
-gulp.task('watch', () => {
-  gulp.watch([
-    dirs.source + '/sass/**/*.scss',
-    dirs.blocks + '/**/*.scss',
-  ], gulp.series('scss'));
-  gulp.watch([
-    dirs.source + '/css/*.css',
-    dirs.blocks + '/**/*.css',
-  ], gulp.series('copy:css'));
-  gulp.watch([
-    dirs.source + '/img/*.{jpg,jpeg,png,svg}',
-    dirs.blocks + '/**/img/*.{jpg,jpeg,png,svg}',
-  ], gulp.series('img'));
-  gulp.watch([
-    dirs.source + '/**/*.js',
-    dirs.blocks + '/**/*.js',
-  ], gulp.series('js'));
+// Оптимизация JS
+gulp.task('js', (cb) => {
+  if (blocks.js.length > 0) {
+    return gulp.src(blocks.js)
+      .pipe(gulpIf(isDev, sourcemaps.init()))
+      .pipe(concat('script.min.js'))
+      .pipe(uglify())
+      .pipe(gulpIf(isDev, sourcemaps.write('.')))
+      .pipe(gulp.dest(dirs.build + '/js'));
+  } else {
+    console.log('---------- Обработка Javascript: в сборке нет js-файлов');
+    cb();
+  }
 });
 
+// Очистка папки build
 gulp.task('clean', () => del(dirs.build + '/**/*'));
+
+// Сборка и выполнение всех тасков
 gulp.task('build', gulp.series('clean', gulp.parallel('scss', 'copy:css', 'img', 'sprite:svg', 'js')));
+
+
+// Слежение за файлами
+gulp.task('watch', () => {
+  // gulp.watch([
+  //   dirs.source + '/*.html',
+  //   dirs.source + '/blocks/**/*.html',
+  // ], gulp.series('html'));
+  // Слежение за SCSS
+  gulp.watch(blocks.scss, gulp.series('scss'));
+  // Слежение за css, если они есть
+  if (blocks.additionalCss) {
+    gulp.watch(blocks.additionalCss, gulp.series('copy:css'));
+  }
+  // Слежение за изображениями, если они есть
+  if (blocks.img) {
+    gulp.watch(blocks.img, gulp.series('img'));
+  }
+  // Слежение за JS, если они есть
+  if (blocks.js) {
+    gulp.watch(blocks.js, gulp.series('js'));
+  }
+});
+
+// Локальный сервер
 gulp.task('serve', () => {
   gulp.series('build');
   browserSync.init({
@@ -144,18 +178,21 @@ gulp.task('serve', () => {
   browserSync.watch([dirs.build + '/**/*.*', '!' + dirs.build + '/**/*.map.*']).on('change', browserSync.reload);
 });
 
+// Задача по умолчанию
 gulp.task('default',
-  gulp.series('build', gulp.parallel('watch', 'serve'))
+  gulp.series('build'/*, gulp.parallel('watch', 'serve')*/)
 );
 
 
 // Определение собираемых компонентов
+//Собирает из папок src/blocks/... и корневых папок img,js,css,scss
 function getComponentsFiles() {
-  // Создаем объект для списка файлов компонентов
+  // Создаем объект для служебных данных
   let componentsFilesList = {
+    scss: [], //тут будут scss-файлы в том же порядке, в котором они подключены
     js: [],  // тут будут JS-файлы компонент в том же порядке, в котором подключены scss-файлы
-    img: [], // тут будет массив из «путь_до_компонента/img/*.{jpg,jpeg,gif,png,svg}» для всех импортируемых компонент
-    css: [], // тут будут CSS-файлы компонент в том же порядке, в котором подключены scss-файлы
+    img: [], // тут будет массив из «путь_до_блока/img/*.{jpg,jpeg,gif,png,svg}» для всех импортируемых блоков
+    additionalCss: [], // тут будут CSS-файлы компонент в том же порядке, в котором подключены scss-файлы
   };
   // Читаем файл диспетчера подключений
   let connectManager = fs.readFileSync(dirs.source + '/sass/style.scss', 'utf8');
@@ -165,38 +202,47 @@ function getComponentsFiles() {
   });
   // Обойдём массив и запишем его части в объект результирующей переменной
   fileSystem.forEach((item) => {
-    // Попробуем вычленить компонент из строки импорта
+    // Попробуем вычленить блок из строки импорта   /blocks/block/name.scss\css
     let componentData = /\/blocks\/(.+?)(\/)(.+?)(?=.(scss|css))/g.exec(item);
-    // Если это компонент и получилось извлечь имя файла
+    // Если это блок и получилось извлечь имя файла
     if (componentData !== null && componentData[3]) {
-      // Название компонента (название папки)
+      // Название блока (название папки)
       let componentName = componentData[1];
       // Имя подключаемого файла без расширения
       let componentFileName = componentData[3];
-      // Имя JS-файла, который нужно взять в сборку в этой итерации, если он существует
-      let jsFile = dirs.blocks + '/' + componentName + '/' + componentFileName + '.js';
-      // Имя CSS-файла, который нужно взять в сборку в этой итерации, если он существует
-      let cssFile = dirs.blocks + '/' + componentName + '/' + componentFileName + '.css';
-      // Если существует js-файл - берем его в массив
-      if (fileExist(jsFile)) {
+      // Имя JS-файла, который нужно взять в сборку, если он существует
+      let jsFile = dirs.source + '/blocks/' + componentName + '/' + componentFileName + '.js';
+      // Имя CSS-файла, который нужно обработать, если он существует
+      let cssFile = dirs.source + '/blocks/' + componentName + '/' + componentFileName + '.css';
+      // Папка с картинками, которую нужно взять в обработку, если она существует
+      let imagesDir = dirs.source + '/blocks/' + componentName + '/img';
+
+      // добавляем в массив с результатом SCSS-файл
+      componentsFilesList.scss.push(dirs.source + componentData[0] + '.' + componentData[4]);
+      // если существует js-файл - добавляем его в массив с результатом
+      if (fileExistAndHasContent(jsFile)) {
         componentsFilesList.js.push(jsFile);
       }
       // Если существует css-файл - берем его в массив
-      if (fileExist(cssFile)) {
-        componentsFilesList.css.push(cssFile);
+      if (fileExistAndHasContent(cssFile)) {
+        componentsFilesList.additionalCss.push(cssFile);
       }
       // Берем в массив изображения
-      componentsFilesList.img.push(dirs.blocks + '/' + componentName + '/img/*.{jpg,jpeg,png,svg}');
+      if (fileExist(imagesDir) !== false) {
+        componentsFilesList.img.push(imagesDir + '/*.{jpg,jpeg,png,svg}');
+      }
     }
   });
 
+  // Добавим глобальные scss-файлы в массив с обрабатываемыми scss файлами
+  componentsFilesList.scss.push(dirs.source + '/sass/**/*.scss');
   // Добавим глобальный JS-файл в начало массива с обрабатываемыми JS-файлами
-  if(fileExist(dirs.source + '/js/global_script.js')) {
-    componentsFilesList.js.unshift(dirs.source + '/js/global_script.js');
+  if (fileExistAndHasContent(dirs.source + '/js/global-script.js')) {
+    componentsFilesList.js.unshift(dirs.source + '/js/global-script.js');
   }
   // Добавим глобальный CSS-файл в начало массива с обрабатываемыми CSS-файлами
-  if(fileExist(dirs.source + '/css/global_additional-css.css')) {
-    componentsFilesList.css.unshift(dirs.source + '/css/global_additional-css.css');
+  if (fileExistAndHasContent(dirs.source + '/css/global-additional-css.css')) {
+    componentsFilesList.additionalCss.unshift(dirs.source + '/css/global-additional-css.css');
   }
   // Добавим глобальные изображения
   componentsFilesList.img.unshift(dirs.source + '/img/*.{jpg,jpeg,png,svg}');
@@ -205,11 +251,19 @@ function getComponentsFiles() {
 }
 
 // Проверка существования файла и его размера (размер менее 2байт == файла нет)
-function fileExist(path) {
-  const fs = require('fs');
+function fileExistAndHasContent(path) {
   try {
     fs.statSync(path);
     return fs.statSync(path).size > 1;
+  } catch (err) {
+    return !(err && err.code === 'ENOENT');
+  }
+}
+
+// Проверка существования файла
+function fileExist(path) {
+  try {
+    fs.statSync(path);
   } catch(err) {
     return !(err && err.code === 'ENOENT');
   }
@@ -217,10 +271,5 @@ function fileExist(path) {
 
 // Оставить в массиве только уникальные значения (убрать повторы)
 function uniqueArray(arr) {
-  let objectTemp = {};
-  for (let i = 0; i < arr.length; i++) {
-    let str = arr[i];
-    objectTemp[str] = true; // запомнить строку в виде свойства объекта
-  }
-  return Object.keys(objectTemp);
+  return Array.from(new Set(arr));
 }
