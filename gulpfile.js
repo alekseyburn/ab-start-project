@@ -8,6 +8,7 @@ const rename = require('gulp-rename');  //переименовывание фа�
 const sourcemaps = require('gulp-sourcemaps');  //карты кода
 const gulpIf = require('gulp-if');  //создание условий
 const newer = require('gulp-newer'); //запускает задачи только для обновившихся файлов
+const ghPages = require('gh-pages');
 const browserSync = require('browser-sync').create();
 
 // Получение настроек папок из package.json
@@ -176,6 +177,11 @@ gulp.task('serve', () => {
   });
 
   browserSync.watch([dirs.build + '/**/*.*', '!' + dirs.build + '/**/*.map.*']).on('change', browserSync.reload);
+});
+
+// Публикация на github pages
+gulp.task('deploy', (cb) => {
+  ghPages.publish('build', {dotfiles: false}, cb);
 });
 
 // Задача по умолчанию
