@@ -264,7 +264,7 @@ function fileExistAndHasContent(path) {
 function fileExist(path) {
   try {
     fs.statSync(path);
-  } catch(err) {
+  } catch (err) {
     return !(err && err.code === 'ENOENT');
   }
 }
