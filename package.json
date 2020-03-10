@@ -42,7 +42,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "./node_modules/.bin/gulp",
-    "scss-lint": "stylelint ./src/**/*.scss"
+    "scss-lint": "stylelint ./src/**/*.scss",
+    "deploy": "set NODE_ENV=production gulp build && gulp deploy"
   },
   "repository": {
     "type": "git",

@@ -181,7 +181,7 @@ gulp.task('serve', () => {
 
 // Публикация на github pages
 gulp.task('deploy', (cb) => {
-  ghPages.publish('build', {dotfiles: false}, cb);
+  ghPages.publish('build', cb);
 });
 
 // Задача по умолчанию
