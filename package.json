@@ -42,8 +42,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "./node_modules/.bin/gulp",
-    "scss-lint": "stylelint ./src/**/*.scss",
-    "precommit": "npm run scss-lint"
+    "scss-lint": "stylelint ./src/**/*.scss"
   },
   "repository": {
     "type": "git",
