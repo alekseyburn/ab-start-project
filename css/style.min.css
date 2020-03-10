@@ -1,0 +1,42 @@
+@font-face {
+  font-weight: normal;
+  font-family: "Sample";
+  font-style: normal;
+  font-display: swap;
+  src: url("../fonts/Sample.woff2") format("woff2"), url("../fonts/Sample.woff") format("woff"); }
+
+@font-face {
+  font-weight: bold;
+  font-family: "Sample";
+  font-style: normal;
+  font-display: swap;
+  src: url("../fonts/Sample.woff2") format("woff2"), url("../fonts/Sample.woff") format("woff"); }
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit; }
+
+html {
+  box-sizing: border-box; }
+
+a {
+  text-decoration: none; }
+
+img {
+  width: 100%;
+  height: auto; }
+
+body {
+  min-width: 320px;
+  margin: 0 auto;
+  font-weight: normal;
+  font-size: 10px;
+  line-height: 150%;
+  font-family: "Sample", "Arial", sans-serif;
+  color: #8E80A9;
+  background-color: #FCF8FE;
+  background-repeat: no-repeat;
+  background-size: contain; }
+
+/*# sourceMappingURL=style.min.css.map */
