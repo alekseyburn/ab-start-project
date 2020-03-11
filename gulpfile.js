@@ -35,8 +35,20 @@ const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
 
 // Файлы компилируемых компонентов
 let blocks = getComponentsFiles();
-console.log('---------- Список задействованных ресурсов');
-console.log(blocks);
+
+// Вывод в консоль информации о взятых в сборку файлах (без LESS)
+if (blocks.js.length) {
+  console.log('---------- В сборку и обработку взяты JS-файлы:');
+  console.log(blocks.js);
+}
+if (blocks.img.length) {
+  console.log('---------- В сборку и обработку взяты изображения:');
+  console.log(blocks.img);
+}
+if (blocks.additionalCss.length) {
+  console.log('---------- В сборку скопированы добавочные CSS:');
+  console.log(blocks.additionalCss);
+}
 
 // Компиляция SCSS
 gulp.task('scss', () => {
@@ -64,10 +76,10 @@ gulp.task('copy:css', (cb) => {
           discardUnused: false  //не удалять неиспользуемые классы
         })
       ]))
-      .pipe(rename((path) => {
-        path.basename = 'additional-styles';
-        path.extname = '.min.css'
-      }))
+      // .pipe(rename((path) => {
+      //   path.basename = 'additional-styles';
+      //   path.extname = '.min.css'
+      // }))
       .pipe(gulp.dest(dirs.build + '/css'));
   } else {
     console.log('---------- Копирование CSS: нет дополнительного CSS');
@@ -176,12 +188,15 @@ gulp.task('serve', () => {
     ui: false,
   });
 
-  browserSync.watch([dirs.build + '/**/*.*', '!' + dirs.build + '/**/*.map.*']).on('change', browserSync.reload);
+  browserSync.watch([
+    dirs.build + '/**/*.*',
+    '!' + dirs.build + '/**/*.map.*'
+  ]).on('change', browserSync.reload);
 });
 
 // Публикация на github pages
 gulp.task('deploy', (cb) => {
-  ghPages.publish('build', cb);
+  ghPages.publish('build', {dotfiles: false}, cb);
 });
 
 // Задача по умолчанию
