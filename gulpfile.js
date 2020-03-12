@@ -77,10 +77,10 @@ gulp.task('copy:css', (cb) => {
           discardUnused: false  //не удалять неиспользуемые классы
         })
       ]))
-      .pipe(rename((path) => {
-        path.basename = 'additional-styles';
-        path.extname = '.min.css'
-      }))
+      // .pipe(rename((path) => {
+      //   path.basename = 'additional-styles';
+      //   path.extname = '.min.css'
+      // }))
       .pipe(gulp.dest(dirs.build + '/css'));
   } else {
     console.log('---------- Копирование CSS: нет дополнительного CSS');
@@ -134,6 +134,11 @@ gulp.task('sprite:svg', (cb) => {
   }
 });
 
+gulp.task('html', () => {
+  return gulp.src(dirs.source + '/**/*.html')
+    .pipe(gulp.dest(dirs.build));
+});
+
 // Оптимизация JS
 gulp.task('js', (cb) => {
   if (blocks.js.length > 0) {
@@ -153,7 +158,7 @@ gulp.task('js', (cb) => {
 gulp.task('clean', () => del(dirs.build + '/**/*'));
 
 // Сборка и выполнение всех тасков
-gulp.task('build', gulp.series('clean', gulp.parallel('scss', 'copy:css', 'img', 'sprite:svg', 'js')));
+gulp.task('build', gulp.series('clean', gulp.parallel('scss', 'copy:css', 'img', 'sprite:svg', 'js'), 'html'));
 
 // Локальный сервер, слежение
 gulp.task('serve', gulp.series('build', () => {
@@ -163,8 +168,9 @@ gulp.task('serve', gulp.series('build', () => {
     open: true,
     cors: true,
     ui: false,
+    startPath: 'index.html'
   });
-  // gulp.watch(dirs.source + '/**/*.html', gulp.series('html', reloader));
+  gulp.watch(dirs.source + '/**/*.html', gulp.series('html', reloader));
   gulp.watch(blocks.scss, gulp.series('scss'));
   if (blocks.img) {
     gulp.watch(blocks.img, gulp.series('img', reloader));
