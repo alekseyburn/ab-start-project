@@ -135,7 +135,7 @@ gulp.task('sprite:svg', (cb) => {
 });
 
 gulp.task('html', () => {
-  return gulp.src(dirs.source + '/**/*.html')
+  return gulp.src(dirs.source + '/*.html')
     .pipe(gulp.dest(dirs.build));
 });
 
@@ -155,10 +155,18 @@ gulp.task('js', (cb) => {
 });
 
 // Очистка папки build
-gulp.task('clean', () => del(dirs.build + '/**/*'));
+gulp.task('clean', () => del([
+  dirs.build + '/**/*',
+  '!' + dirs.build + '/readme.md'
+]));
 
 // Сборка и выполнение всех тасков
-gulp.task('build', gulp.series('clean', gulp.parallel('scss', 'copy:css', 'img', 'sprite:svg', 'js'), 'html'));
+gulp.task('build', gulp.series(
+  'clean',
+  'sprite:svg',
+  gulp.parallel('scss', 'copy:css', 'img', 'js'),
+  'html'
+));
 
 // Локальный сервер, слежение
 gulp.task('serve', gulp.series('build', () => {
@@ -170,7 +178,7 @@ gulp.task('serve', gulp.series('build', () => {
     ui: false,
     startPath: 'index.html'
   });
-  gulp.watch(dirs.source + '/**/*.html', gulp.series('html', reloader));
+  gulp.watch(dirs.source + '/*.html', gulp.series('html', reloader));
   gulp.watch(blocks.scss, gulp.series('scss'));
   if (blocks.img) {
     gulp.watch(blocks.img, gulp.series('img', reloader));
