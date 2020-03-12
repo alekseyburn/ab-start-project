@@ -62,7 +62,8 @@ gulp.task('scss', () => {
     .pipe(gulpIf(!isDev, postcss(cssnano())))
     .pipe(rename('style.min.css'))
     .pipe(gulpIf(isDev, sourcemaps.write('.')))
-    .pipe(gulp.dest(dirs.build + '/css'));
+    .pipe(gulp.dest(dirs.build + '/css'))
+    .pipe(browserSync.stream());
 });
 
 // Копирование добавочных css
@@ -76,10 +77,10 @@ gulp.task('copy:css', (cb) => {
           discardUnused: false  //не удалять неиспользуемые классы
         })
       ]))
-      // .pipe(rename((path) => {
-      //   path.basename = 'additional-styles';
-      //   path.extname = '.min.css'
-      // }))
+      .pipe(rename((path) => {
+        path.basename = 'additional-styles';
+        path.extname = '.min.css'
+      }))
       .pipe(gulp.dest(dirs.build + '/css'));
   } else {
     console.log('---------- Копирование CSS: нет дополнительного CSS');
@@ -139,7 +140,7 @@ gulp.task('js', (cb) => {
     return gulp.src(blocks.js)
       .pipe(gulpIf(isDev, sourcemaps.init()))
       .pipe(concat('script.min.js'))
-      .pipe(uglify())
+      .pipe(gulpIf(!isDev, uglify()))
       .pipe(gulpIf(isDev, sourcemaps.write('.')))
       .pipe(gulp.dest(dirs.build + '/js'));
   } else {
@@ -154,32 +155,8 @@ gulp.task('clean', () => del(dirs.build + '/**/*'));
 // Сборка и выполнение всех тасков
 gulp.task('build', gulp.series('clean', gulp.parallel('scss', 'copy:css', 'img', 'sprite:svg', 'js')));
 
-
-// Слежение за файлами
-gulp.task('watch', () => {
-  // gulp.watch([
-  //   dirs.source + '/*.html',
-  //   dirs.source + '/blocks/**/*.html',
-  // ], gulp.series('html'));
-  // Слежение за SCSS
-  gulp.watch(blocks.scss, gulp.series('scss'));
-  // Слежение за css, если они есть
-  if (blocks.additionalCss) {
-    gulp.watch(blocks.additionalCss, gulp.series('copy:css'));
-  }
-  // Слежение за изображениями, если они есть
-  if (blocks.img) {
-    gulp.watch(blocks.img, gulp.series('img'));
-  }
-  // Слежение за JS, если они есть
-  if (blocks.js) {
-    gulp.watch(blocks.js, gulp.series('js'));
-  }
-});
-
-// Локальный сервер
-gulp.task('serve', () => {
-  gulp.series('build');
+// Локальный сервер, слежение
+gulp.task('serve', gulp.series('build', () => {
   browserSync.init({
     server: dirs.build,
     notify: false,
@@ -187,12 +164,15 @@ gulp.task('serve', () => {
     cors: true,
     ui: false,
   });
-
-  browserSync.watch([
-    dirs.build + '/**/*.*',
-    '!' + dirs.build + '/**/*.map.*'
-  ]).on('change', browserSync.reload);
-});
+  // gulp.watch(dirs.source + '/**/*.html', gulp.series('html', reloader));
+  gulp.watch(blocks.scss, gulp.series('scss'));
+  if (blocks.img) {
+    gulp.watch(blocks.img, gulp.series('img', reloader));
+  }
+  if (blocks.js) {
+    gulp.watch(blocks.js, gulp.series('js', reloader));
+  }
+}));
 
 // Публикация на github pages
 gulp.task('deploy', (cb) => {
@@ -201,9 +181,14 @@ gulp.task('deploy', (cb) => {
 
 // Задача по умолчанию
 gulp.task('default',
-  gulp.series('build'/*, gulp.parallel('watch', 'serve')*/)
+  gulp.series('serve')
 );
 
+// Перезагрузка в браузере
+function reloader(cb) {
+  browserSync.reload();
+  cb();
+}
 
 // Определение собираемых компонентов
 //Собирает из папок src/blocks/... и корневых папок img,js,css,scss
