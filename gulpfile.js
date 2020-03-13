@@ -190,7 +190,10 @@ gulp.task('serve', gulp.series('build', () => {
 
 // Публикация на github pages
 gulp.task('deploy', (cb) => {
-  ghPages.publish('build', {dotfiles: false}, cb);
+  ghPages.publish('build', {
+    branch: 'gh-pages',
+    repo: 'https://github.com/alekseyburn/ab-start-project.git'
+  }, cb);
 });
 
 // Задача по умолчанию
