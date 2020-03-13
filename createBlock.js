@@ -44,7 +44,7 @@ if (blockName) {
 
         let reg = new RegExp(SCSSfileImport, '');
 
-        // флан отсутствия блока среди импортов
+        // флаг отсутствия блока среди импортов
         let importExist = false;
 
         // Обойдем массив и проверим наличие импорта

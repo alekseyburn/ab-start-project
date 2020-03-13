@@ -57,9 +57,9 @@ gulp.task('scss', () => {
     .pipe(sass())
     .pipe(postcss([
       autoprefixer(),
-      mqpacker(),
+      mqpacker()
     ]))
-    .pipe(gulpIf(!isDev, postcss(cssnano())))
+    .pipe(gulpIf(!isDev, postcss([cssnano()])))
     .pipe(rename('style.min.css'))
     .pipe(gulpIf(isDev, sourcemaps.write('.')))
     .pipe(gulp.dest(dirs.build + '/css'))
