@@ -20,6 +20,7 @@ const sass = require('gulp-sass');  //компиляция scss
 const cssnano = require('cssnano'); //минификация css
 const mqpacker = require('css-mqpacker'); //конкатенация mediaquery's
 const autoprefixer = require('autoprefixer'); //автопрефиксы
+const size = require('gulp-size'); //размер файла
 
 const imagemin = require('gulp-imagemin');  //оптимизация изображений
 const mozjpeg = require('imagemin-mozjpeg');  //сжатие jpeg
@@ -62,6 +63,11 @@ gulp.task('scss', () => {
     .pipe(gulpIf(!isDev, postcss([cssnano()])))
     .pipe(rename('style.min.css'))
     .pipe(gulpIf(isDev, sourcemaps.write('.')))
+    .pipe(size({
+      title: 'Размер',
+      showFiles: true,
+      showTotal: false,
+    }))
     .pipe(gulp.dest(dirs.build + '/css'))
     .pipe(browserSync.stream());
 });
