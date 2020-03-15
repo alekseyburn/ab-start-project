@@ -75,7 +75,10 @@ if (blockName) {
         }
       } else if (extension === 'html') {
         fileContent = '<div class="' + blockName + '">content</div>\n';
+      } else if (extension === 'js') {
+        fileContent = '// (function(){\n// код\n// }());\n';
       }
+
       if (fileExist(filePath) === false) {
         fs.writeFile(filePath, fileContent, (err) => {
           if (err) {
