@@ -58,7 +58,9 @@ gulp.task('scss', () => {
     .pipe(sass())
     .pipe(postcss([
       autoprefixer(),
-      mqpacker()
+      mqpacker({
+        sort: true
+      })
     ]))
     .pipe(gulpIf(!isDev, postcss([cssnano()])))
     .pipe(rename('style.min.css'))
@@ -114,6 +116,18 @@ gulp.task('img', () => {
     .pipe(gulp.dest(dirs.build + '/img'));
 });
 
+// Копирование шрифтов
+gulp.task('fonts:copy', () => {
+  return gulp.src(dirs.source + '/fonts/*.{woff,woff2}', {since: gulp.lastRun('fonts:copy')})
+    .pipe(newer(dirs.build + '/fonts')) // оставить в потоке только изменившиеся файлы
+    .pipe(size({
+      title: 'Размер',
+      showFiles: true,
+      showTotal: false,
+    }))
+    .pipe(gulp.dest(dirs.build + '/fonts'));
+});
+
 // Создание svg-спрайта
 gulp.task('sprite:svg', (cb) => {
   let spritePath = dirs.source + '/img/svg-sprite/';
@@ -133,6 +147,11 @@ gulp.task('sprite:svg', (cb) => {
         $('svg').attr('style', 'display: none');
       }))
       .pipe(rename('sprite.svg'))
+      .pipe(size({
+        title: 'Размер',
+        showFiles: true,
+        showTotal: false,
+      }))
       .pipe(gulp.dest(dirs.build + '/img'))
   } else {
     console.log('---------- Сборка SVG спрайта: нет папки с картинками');
@@ -153,6 +172,11 @@ gulp.task('js', (cb) => {
       .pipe(concat('script.min.js'))
       .pipe(gulpIf(!isDev, uglify()))
       .pipe(gulpIf(isDev, sourcemaps.write('.')))
+      .pipe(size({
+        title: 'Размер',
+        showFiles: true,
+        showTotal: false,
+      }))
       .pipe(gulp.dest(dirs.build + '/js'));
   } else {
     console.log('---------- Обработка Javascript: в сборке нет js-файлов');
@@ -170,7 +194,7 @@ gulp.task('clean', () => del([
 gulp.task('build', gulp.series(
   'clean',
   'sprite:svg',
-  gulp.parallel('scss', 'copy:css', 'img', 'js'),
+  gulp.parallel('scss', 'copy:css', 'img', 'js', 'fonts:copy'),
   'html'
 ));
 
@@ -192,6 +216,7 @@ gulp.task('serve', gulp.series('build', () => {
   if (blocks.js) {
     gulp.watch(blocks.js, gulp.series('js', reloader));
   }
+  gulp.watch(dirs.source + '/fonts/*.{woff,woff2}', gulp.series('fonts:copy', reloader));
 }));
 
 // Публикация на github pages
@@ -220,53 +245,42 @@ function getComponentsFiles() {
     img: [], // тут будет массив из «путь_до_блока/img/*.{jpg,jpeg,gif,png,svg}» для всех импортируемых блоков
     additionalCss: [], // тут будут CSS-файлы компонент в том же порядке, в котором подключены scss-файлы
   };
-  let jsLibs = []; // тут будут сторонние JS-файлы из используемых блоков (библиотеки), потом вставим в начало сomponentsFilesList.js
+
   // Читаем файл диспетчера подключений
   let connectManager = fs.readFileSync(dirs.source + '/sass/style.scss', 'utf8');
+
   // Фильтруем массив, оставляя только строки с незакомментированными импортами
   let fileSystem = connectManager.split('\n').filter((item) => {
     return /^(\s*)@import/.test(item);
   });
+
   // Обойдём массив и запишем его части в объект результирующей переменной
   fileSystem.forEach((item) => {
     // Попробуем вычленить блок из строки импорта   /blocks/block/name.scss\css
     let componentData = /\/blocks\/(.+?)(\/)(.+?)(?=.(scss|css))/g.exec(item);
+
     // Если это блок и получилось извлечь имя файла
     if (componentData !== null && componentData[3]) {
-      // Название блока (название папки)
-      let componentName = componentData[1];
-      // Папка блока
-      let blockDir = dirs.source + '/blocks/' + componentName;
-      // Имя подключаемого файла без расширения
-      let componentFileName = componentData[3];
-      // Имя JS-файла, который нужно взять в сборку, если он существует
-      let jsFile = blockDir + '/' + componentFileName + '.js';
-      // Имя CSS-файла, который нужно обработать, если он существует
-      let cssFile = blockDir + '/' + componentFileName + '.css';
-      // Папка с картинками, которую нужно взять в обработку, если она существует
-      let imagesDir = blockDir + '/img';
+      let componentName = componentData[1];                             // Название блока (название папки)
+      let blockDir = dirs.source + '/blocks/' + componentName;          // Папка блока
+      let componentFileName = componentData[3];                         // Имя подключаемого файла без расширения
+      let jsFile = blockDir + '/' + componentFileName + '.js';          // Имя JS-файла, который нужно взять в сборку, если он существует
+      let cssFile = blockDir + '/' + componentFileName + '.css';        // Имя CSS-файла, который нужно обработать, если он существует
+      let imagesDir = blockDir + '/img';                                // Папка с картинками, которую нужно взять в обработку, если она существует
 
       // Добавляем в массив с результатом SCSS-файл
       componentsFilesList.scss.push(dirs.source + componentData[0] + '.' + componentData[4]);
-      // Если в папке блока есть сторонние js-файлы - добавляем их в массив с реультатом (это библиотеки)
-      let blockFiles = fs.readdirSync(blockDir); // Список файлов
-      let reg = new RegExp(componentName + '(\.|--)', '');
-      blockFiles.forEach((file) => {
-        if (/\.js$/.test(file) && !reg.test(file)) {
-          if (fileExistAndHasContent(blockDir + '/' + file)) {  // и если он существует и не пуст
-            jsLibs.push(blockDir + '/' + file); // добавим в массив библиотек
-          }
-        }
-      });
-      jsLibs = uniqueArray(jsLibs);
+
       // Если существует js-файл - добавляем его в массив с результатом
       if (fileExistAndHasContent(jsFile)) {
         componentsFilesList.js.push(jsFile);
       }
+
       // Если существует css-файл - берем его в массив
       if (fileExistAndHasContent(cssFile)) {
         componentsFilesList.additionalCss.push(cssFile);
       }
+
       // Берем в массив изображения
       if (fileExist(imagesDir) !== false) {
         componentsFilesList.img.push(imagesDir + '/*.{jpg,jpeg,png,svg}');
@@ -276,18 +290,30 @@ function getComponentsFiles() {
 
   // Добавим глобальные scss-файлы в массив с обрабатываемыми scss файлами
   componentsFilesList.scss.push(dirs.source + '/sass/**/*.scss');
+
   // Добавим глобальный JS-файл в начало массива с обрабатываемыми JS-файлами
   if (fileExistAndHasContent(dirs.source + '/js/global-script.js')) {
     componentsFilesList.js.unshift(dirs.source + '/js/global-script.js');
   }
-  // Добавим js библиотеки (если есть) в начало списка js-файлов
-  if (jsLibs) {
-    componentsFilesList.js = jsLibs.concat(componentsFilesList.js);
-  }
+
+  // Если хочется иметь в конкатенируемом JS ещё какие-то файлы, пишите это здесь
+  // if (fileExistAndHasContent(dirs.source + '/js/file_name.js')) {
+  //   сomponentsFilesList.js.unshift(dirs.source + '/js/file_name.js'); // добавляем в начало
+  //   или
+  //   сomponentsFilesList.js.push(dirs.source + '/js/file_name.js'); // добавляем в конец
+  // }
+
   // Добавим глобальный CSS-файл в начало массива с обрабатываемыми CSS-файлами
-  if (fileExistAndHasContent(dirs.source + '/css/global-additional-css.css')) {
-    componentsFilesList.additionalCss.unshift(dirs.source + '/css/global-additional-css.css');
+  if (fileExistAndHasContent(dirs.source + '/css/global-css.css')) {
+    componentsFilesList.additionalCss.unshift(dirs.source + '/css/global-css.css');
   }
+
+  // Если хочется иметь в папке сборки какие-то еще отдельные CSS-файлы, пишите их здесь
+  // if (fileExistAndHasContent(dirs.source + '/css/file_name.css')) {
+  //   сomponentsFilesList.additionalCss.unshift(dirs.source + '/css/file_name.css');
+  // }
+
+
   // Добавим глобальные изображения
   componentsFilesList.img.unshift(dirs.source + '/img/*.{jpg,jpeg,png,svg}');
   componentsFilesList.img = uniqueArray(componentsFilesList.img);

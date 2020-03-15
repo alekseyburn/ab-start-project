@@ -15,7 +15,7 @@ process.argv[n]
 В нашем случае [2] - имя блока, [3-...] - имена расширений
  */
 let blockName = process.argv[2];
-let defaultExtensions = ['html', 'scss']; //расширения по умолчанию
+let defaultExtensions = ['scss', 'html']; //расширения по умолчанию
 //добавляем к массиву defaultExtensions additional extensions, заданные при вводе run node createBlock, затем удаляем дубликаты
 let extensions = uniqueArray(defaultExtensions.concat(process.argv.slice(3)));
 
@@ -79,7 +79,17 @@ if (blockName) {
         fileContent = '// (function(){\n// код\n// }());\n';
       }
 
-      if (fileExist(filePath) === false) {
+      // Если нужна подпапка для картинок
+      else if (extension === 'img') {
+        let imgFolder = dirPath + 'img/';
+        if (fileExist(imgFolder) === false) {
+          mkdirp(imgFolder).then(() => {
+            console.log('[NTH] Папка создана: ' + imgFolder);
+          })
+        }
+      }
+
+      if (fileExist(filePath) === false && extension !== 'img') {
         fs.writeFile(filePath, fileContent, (err) => {
           if (err) {
             return console.log('[NTH] Файл не создан: ' + err);
@@ -89,7 +99,7 @@ if (blockName) {
             console.warn(fileCreateMsg);
           }
         });
-      } else {
+      } else if (extension !== 'img') {
         console.log('[NTH] Файл не создан: ' + filePath + ' уже существует');
       }
     });
