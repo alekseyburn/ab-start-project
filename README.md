@@ -1,5 +1,7 @@
 # Стартовый проект с gulp
 
+![David](https://img.shields.io/david/dev/alekseyburn/ab-start-project?style=flat-square)
+
 Установка: `npm i`. 
 
 Использование: `npm start`. После `npm start` можно через пробел указать задачи, описанные в `gulpfile.js`.
