@@ -28,6 +28,7 @@
     "gulp-sourcemaps": "^2.6.5",
     "gulp-svgstore": "^7.0.1",
     "gulp-uglify": "^3.0.2",
+    "husky": "^4.2.3",
     "imagemin-mozjpeg": "^8.0.0",
     "imagemin-pngquant": "^8.0.0",
     "mkdirp": "^1.0.3",
@@ -42,8 +43,8 @@
     }
   },
   "scripts": {
-    "start": "cross-env NODE_ENV=production ./node_modules/.bin/gulp",
-    "test": "stylelint ./src/**/*.scss",
+    "start": "gulp",
+    "test": "stylelint \"./src/**/*.scss\"",
     "build": "cross-env NODE_ENV=production npm start build",
     "deploy": "cross-env NODE_ENV=production ./node_modules/.bin/gulp build && cross-env ./node_modules/.bin/gulp deploy",
     "precommit": "npm test"
