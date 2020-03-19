@@ -1,4 +1,6 @@
-@import "variables.scss";
-@import "mixins.scss";
-@import "fonts.scss";
-@import "scaffolding.scss";
+@import "./src/sass/variables.scss";
+@import "./src/sass/mixins.scss";
+@import "./src/sass/fonts.scss";
+@import "./src/blocks/sprite-png/sprite-png.scss";
+@import "./src/sass/scaffolding.scss";
+@import "./src/blocks/sprite-svg/sprite-svg.scss";
