@@ -11,16 +11,20 @@
   "license": "ISC",
   "configProject": {
     "blocks": {
-      "sprite-svg": []
+      "sprite-svg": [],
+      "sprite-png": [
+        "__demo"
+      ]
     },
     "addCssBefore": [
       "./src/sass/variables.scss",
       "./src/sass/mixins.scss",
-      "./src/sass/fonts.scss",
-      "./src/blocks/sprite-png/sprite-png.scss",
+      "./src/sass/fonts.scss"
+
+    ],
+    "addCssAfter": [
       "./src/sass/scaffolding.scss"
     ],
-    "addCssAfter": [],
     "addJsBefore": [
       "./node_modules/svg4everybody/dist/svg4everybody.js"
     ],

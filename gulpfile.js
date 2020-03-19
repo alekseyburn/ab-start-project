@@ -40,7 +40,7 @@ lists.css.forEach(blockPath => {
   styleImports += '@import "' + blockPath + '";\n';
 });
 console.log(`styleImports: ${styleImports}`);
-fs.writeFileSync('./src/sass/style.scss', styleImports);
+fs.writeFileSync(dirs.srcPath + 'sass/style.scss', styleImports);
 
 // Запуск `NODE_ENV=production npm start [задача]` приведет к сборке без sourcemaps
 const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
@@ -160,9 +160,9 @@ gulp.task('sprite:svg', (callback) => {
           })
         ]))
         .pipe(svgstore({inlineSvg: true}))
-        .pipe(cheerio(($) => {
-          $('svg').attr('style', 'display:none');
-        }))
+        // .pipe(cheerio(($) => {
+        //   $('svg').attr('style', 'display:none');
+        // }))
         .pipe(rename('sprite-svg.svg'))
         .pipe(size({
           title: 'Размер',
@@ -297,7 +297,8 @@ gulp.task('serve', gulp.series('build', () => {
   // Слежение за стилями
   gulp.watch([
     dirs.srcPath + dirs.blocksDirName + '/**/*.scss',
-    dirs.srcPath + '/scss/**/*.scss',
+    dirs.srcPath + '/sass/**/*.scss',
+    dirs.srcPath + '*.scss'
   ], gulp.series('scss'));
   // Слежение за добавочными стилями
   if (pjson.configProject.copiedCss.length) {
@@ -323,10 +324,10 @@ gulp.task('serve', gulp.series('build', () => {
   }
   // Слежение за png (спрайты)
   if ((pjson.configProject.blocks['sprite-png']) !== undefined) {
-    gulp.watch('*.png', {cwd: spritePngPath}, ['watch:sprite:png']) // следит за новыми и удаляемыми файлами
+    gulp.watch('*.png', {cwd: spritePngPath}, gulp.series('watch:sprite:png')); // следит за новыми и удаляемыми файлами
   }
   // Слежение за html
-  gulp.watch(dirs.srcPath + '/**/*.html', gulp.series('watch:html'));
+  gulp.watch(dirs.srcPath + '*.html', gulp.series('watch:html'));
 }));
 
 
@@ -368,7 +369,10 @@ function getFilesList(config) {
 
   // JS
   for (let blockName in config.blocks) {
-    res.js.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + '.js');
+    let file = config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + '.js';
+    if (fileExist(file)) {
+      res.js.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + '.js');
+    }
     if (config.blocks[blockName].length) {
       config.blocks[blockName].forEach(elementName => {
         res.js.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + elementName + '.js');
