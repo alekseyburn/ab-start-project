@@ -89,7 +89,7 @@ block-name/               # Папка блока
 
 ## Пример секции в `./package.json`
 
-Настройки подключаемых файлов указаны в `./package.json`, в секции `configProject`:
+Список используемых блоков и дополнительных подключаемых файлов указан в `./package.json`, в секции `configProject`.
 
 ```json
 "configProject": {
