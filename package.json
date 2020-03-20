@@ -90,10 +90,16 @@
     "start": "gulp",
     "test": "stylelint \"./src/**/*.scss\" --syntax=scss",
     "precommit": "npm test",
+    "lint-staged": "lint-staged",
     "build": "cross-env NODE_ENV=production npm start build",
     "deploy": "cross-env NODE_ENV=production ./node_modules/.bin/gulp build && cross-env ./node_modules/.bin/gulp deploy"
   },
   "lint-staged": {
     "*.scss": "stylelint --syntax=scss"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   }
 }
