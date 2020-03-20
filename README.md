@@ -54,8 +54,8 @@
 ```bash
 block-name/               # Папка блока
   img/                    # Изображения, используемые блоком
-  demo-block.scss         # Главный стилевой файл блока
-  demo-block.js           # Главный js-файл блока
+  demo-block.scss         # Стилевой файл блока
+  demo-block.js           # js-файл блока
   demo-block.html         # Варианты разметки (только как документация блока или как вставляемый фрагмент)
   demo-block.css          # Добавочный css (копируется как отдельный файл в `build/css`)
   readme.md               # Какое-то пояснение
@@ -125,7 +125,7 @@ block-name/               # Папка блока
   }
 }
 ```
-В обработку будут взяты:
+В результате в обработку будут взяты (в указанной последовательности):
 
 ```bash
 css:
@@ -143,20 +143,20 @@ js:
    './src/blocks/page-footer/page-footer--extra-modifier.js',
    './src/js/global-script.js' ],
 img:
- [ './src/img/',
-   './src/blocks/page-header/img',
-   './src/blocks/page-footer/img' ]
+ [ './src/img/*.{jpg,jpeg,gif,png,svg}',
+      './src/blocks/page-header/img/*.{jpg,jpeg,gif,png,svg}',
+      './src/blocks/page-footer/img/*.{jpg,jpeg,gif,png,svg}' ]
 ```
 
 
 ### Удобное создание нового блока
 
-Предусмотрена команда бля быстрого создания файловой структуры нового блока.
+Предусмотрена команда для быстрого создания файловой структуры нового блока.
 
 ```bash
 # формат: node createBlock.js [имя блока] [доп. расширения через пробел]
-node createBlock.js block # создаст папку блока, block.html, block.scss и подпапку img/ для этого блока
-node createBlock.js new-block js pug # создаст папку блока, new-block.html, new-block.scss, new-block.js, new-block.pug и подпапку img/ для этого блока
+node createBlock.js block-1 # создаст папку блока, block-1.html, block-1.scss и подпапку img/ для этого блока
+node createBlock.js block-2 js pug # создаст папку блока, block-2.html, block-2.scss, block-2.js, block-2.pug и подпапку img/ для этого блока
 ```
 
 Если блок уже существует, файлы не будут затёрты, но создадутся те файлы, которые ещё не существуют.

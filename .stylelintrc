@@ -2,6 +2,7 @@
   "extends": [
     "stylelint-config-standard"
   ],
+  "syntax": "scss",
   "plugins": [
     "stylelint-scss"
   ],

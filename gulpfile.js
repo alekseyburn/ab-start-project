@@ -37,7 +37,7 @@ console.log(lists);
 // Запишем стилевой файл в диспетчер подключений
 let styleImports = '';
 lists.css.forEach(blockPath => {
-  styleImports += '@import "' + blockPath + '";\n';
+  styleImports += '@import \''+blockPath+'\';\n';
 });
 console.log(`styleImports: ${styleImports}`);
 fs.writeFileSync(dirs.srcPath + 'sass/style.scss', styleImports);
@@ -221,6 +221,7 @@ gulp.task('sprite:png', (callback) => {
 gulp.task('html', () => {
   console.log('---------- сборка HTML');
   return gulp.src(dirs.srcPath + '/*.html')
+    .pipe(plumber())
     .pipe(gulp.dest(dirs.buildPath));
 });
 
@@ -296,9 +297,9 @@ gulp.task('serve', gulp.series('build', () => {
   });
   // Слежение за стилями
   gulp.watch([
+    dirs.srcPath + 'sass/style.scss',
     dirs.srcPath + dirs.blocksDirName + '/**/*.scss',
-    dirs.srcPath + '/sass/**/*.scss',
-    dirs.srcPath + '*.scss'
+    dirs.srcPath + 'sass/*.scss'
   ], gulp.series('scss'));
   // Слежение за добавочными стилями
   if (pjson.configProject.copiedCss.length) {
@@ -327,7 +328,11 @@ gulp.task('serve', gulp.series('build', () => {
     gulp.watch('*.png', {cwd: spritePngPath}, gulp.series('watch:sprite:png')); // следит за новыми и удаляемыми файлами
   }
   // Слежение за html
-  gulp.watch(dirs.srcPath + '*.html', gulp.series('watch:html'));
+  gulp.watch([
+    '*.html',
+    dirs.blocksDirName + '/**/*.html'
+    ], {cwd: dirs.srcPath},
+    gulp.series('watch:html'));
 }));
 
 
