@@ -89,8 +89,7 @@
   "scripts": {
     "start": "gulp",
     "test": "stylelint \"./src/**/*.scss\" --syntax=scss",
-    "lint-staged": "lint-staged",
-    "pre-commit": "lint-staged",
+    "precommit": "test",
     "build": "cross-env NODE_ENV=production npm start build",
     "deploy": "cross-env NODE_ENV=production ./node_modules/.bin/gulp build && cross-env ./node_modules/.bin/gulp deploy"
   },
