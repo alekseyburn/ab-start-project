@@ -3,8 +3,8 @@
 // Использование: node createBlock.js [имя блока] [доп. расширения через пробел]
 
 const fs = require('fs'); // Для работы с файловой системой
-const pjson = require('./package.json'); // Чтобы получать настройки из package.json
-const dirs = pjson.configProject.dirs; // Объект с директориями
+const projectConfig = require('./projectConfig.json'); // Чтобы получать настройки из package.json
+const dirs = projectConfig.dirs; // Объект с директориями
 const mkdirp = require('mkdirp'); // Зависимость - создание папки
 
 /*
@@ -33,9 +33,9 @@ if (blockName) {
       if (extension === 'scss') {
         fileContent = '// В этом файле должны быть стили только для БЭМ-блока ' + blockName + ', его элементов, \n// модификаторов, псевдоселекторов, псевдоэлементов, @media-условий...\n// Не пишите здесь другие селекторы.\n\n.' + blockName + ' {\n  \n}\n';
 
-        // Добавим созданный файл в ./package.json
+        // Добавим созданный файл
         let hasThisBlock = false;
-        for (let block in pjson.configProject.blocks) {
+        for (let block in projectConfig.blocks) {
           if (block === blockName) {
             hasThisBlock = true;
             break;
@@ -43,10 +43,10 @@ if (blockName) {
         }
 
         if (!hasThisBlock) {
-          pjson.configProject.blocks[blockName] = [];
-          let newPackageJson = JSON.stringify(pjson, '', 2);
-          fs.writeFileSync('./package.json', newPackageJson);
-          fileCreateMsg = '[NTH] Подключение блока добавлено в package.json';
+          projectConfig.blocks[blockName] = [];
+          let newPackageJson = JSON.stringify(projectConfig, '', 2);
+          fs.writeFileSync('./projectConfig.json', newPackageJson);
+          fileCreateMsg = '[NTH] Подключение блока добавлено в projectConfig.json';
         }
       }
 
