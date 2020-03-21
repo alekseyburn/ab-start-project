@@ -20,7 +20,6 @@ const imagemin = require('gulp-imagemin');  //оптимизация изобр�
 const mozjpeg = require('imagemin-mozjpeg');  //сжатие jpeg
 const pngquant = require('imagemin-pngquant');  //сжатие png
 const svgstore = require('gulp-svgstore');  //создание спрайта
-const cheerio = require('gulp-cheerio'); //удаление ненужных параметров в svg
 const spritesmith = require('gulp.spritesmith');  //создание png спрайта
 const buffer = require('vinyl-buffer'); //читает поток данных и сохраняет в буфер для трансформаций
 const merge = require('merge-stream');  //объединяет потоки
@@ -28,13 +27,13 @@ const uglify = require('gulp-uglify'); //минификация js
 const concat = require('gulp-concat'); //объединение файлов в один
 const ghPages = require('gh-pages');  //запускает деплой в ветку gh-pages
 
-// Получим настройки проекта из projectConfig.json
+// Получение настроек проекта из projectConfig.json
 let projectConfig = require('./projectConfig.json');
 let dirs = projectConfig.dirs;
 let lists = getFilesList(projectConfig);
 console.log(lists);
 
-// Запишем стилевой файл в диспетчер подключений
+// Формирование и запись диспетчера подключений (style.scss), который компилируется в style.min.css
 let styleImports = '';
 lists.css.forEach(blockPath => {
   styleImports += '@import \''+blockPath+'\';\n';
@@ -160,9 +159,6 @@ gulp.task('sprite:svg', (callback) => {
           })
         ]))
         .pipe(svgstore({inlineSvg: true}))
-        // .pipe(cheerio(($) => {
-        //   $('svg').attr('style', 'display:none');
-        // }))
         .pipe(rename('sprite-svg.svg'))
         .pipe(size({
           title: 'Размер',

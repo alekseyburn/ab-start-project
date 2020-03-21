@@ -14,28 +14,28 @@ process.argv[n]
 [2-...] - Значения, переданные в коммандную строку после имени файла
 В нашем случае [2] - имя блока, [3-...] - имена расширений
  */
-let blockName = process.argv[2];
-let defaultExtensions = ['scss', 'html', 'img']; //расширения по умолчанию
+const blockName = process.argv[2];
+const defaultExtensions = ['scss', 'html', 'img']; //расширения по умолчанию
 
 //добавляем к массиву defaultExtensions additional extensions, заданные при вводе run node createBlock, затем удаляем дубликаты
-let extensions = uniqueArray(defaultExtensions.concat(process.argv.slice(3)));
+const extensions = uniqueArray(defaultExtensions.concat(process.argv.slice(3)));
 
 if (blockName) {
 
-  let dirPath = dirs.srcPath + dirs.blocksDirName + '/' + blockName + '/';
+  const dirPath = `${dirs.srcPath + dirs.blocksDirName}/${blockName}/`;
   mkdirp(dirPath).then(() => {
-    console.log('[NTH] Создание папки ' + dirPath + ' (создана, если ещё не существует)');
+    console.log(`[NTH] Создание папки ${dirPath} (создана, если ещё не существует)`);
 
     extensions.forEach((extension) => {
-      let filePath = dirPath + blockName + '.' + extension;
+      const filePath = `${dirPath + blockName}.${extension}`;
       let fileContent = '';
       let fileCreateMsg = '';
       if (extension === 'scss') {
-        fileContent = '// В этом файле должны быть стили только для БЭМ-блока ' + blockName + ', его элементов, \n// модификаторов, псевдоселекторов, псевдоэлементов, @media-условий...\n// Не пишите здесь другие селекторы.\n\n.' + blockName + ' {\n  \n}\n';
+        fileContent = `// В этом файле должны быть стили для БЭМ-блока ${blockName}, его элементов, \n// модификаторов, псевдоселекторов, псевдоэлементов, @media-условий...\n// Очередность: http://nicothin.github.io/idiomatic-pre-CSS/#priority\n\n.${blockName} {\n\n  $block-name:                &;\n  // #{$block-name}__element {}\n}\n`;
 
         // Добавим созданный файл
         let hasThisBlock = false;
-        for (let block in projectConfig.blocks) {
+        for (const block in projectConfig.blocks) {
           if (block === blockName) {
             hasThisBlock = true;
             break;
@@ -44,7 +44,7 @@ if (blockName) {
 
         if (!hasThisBlock) {
           projectConfig.blocks[blockName] = [];
-          let newPackageJson = JSON.stringify(projectConfig, '', 2);
+          const newPackageJson = JSON.stringify(projectConfig, '', 2);
           fs.writeFileSync('./projectConfig.json', newPackageJson);
           fileCreateMsg = '[NTH] Подключение блока добавлено в projectConfig.json';
         }
@@ -60,10 +60,10 @@ if (blockName) {
 
       // Если нужна подпапка для картинок
       else if (extension === 'img') {
-        let imgFolder = dirPath + 'img/';
+        const imgFolder = `${dirPath}img/`;
         if (fileExist(imgFolder) === false) {
           mkdirp(imgFolder).then(() => {
-            console.log('[NTH] Папка создана: ' + imgFolder + ' (если отсутствует)');
+            console.log(`[NTH] Папка создана: ${imgFolder} (если отсутствует)`);
           });
         }
       }
@@ -71,20 +71,20 @@ if (blockName) {
       if (fileExist(filePath) === false && extension !== 'img') {
         fs.writeFile(filePath, fileContent, (err) => {
           if (err) {
-            return console.log('[NTH] Файл не создан: ' + err);
+            return console.log(`[NTH] Файл не создан: ${err}`);
           }
-          console.log('[NTH] Файл создан: ' + filePath);
+          console.log(`[NTH] Файл создан: ${filePath}`);
           if (fileCreateMsg) {
             console.warn(fileCreateMsg);
           }
         });
       } else if (extension !== 'img') {
-        console.log('[NTH] Файл не создан: ' + filePath + ' уже существует');
+        console.log(`[NTH] Файл не создан: ${filePath} уже существует`);
       }
     });
   });
 } else {
-  console.log('[NTH]] Отмена операции: не указан блок');
+  console.log(`[NTH] Отмена операции: не указан блок`);
 }
 
 // Оставить в массиве только уникальные значения (убрать повторы)
