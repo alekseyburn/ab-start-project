@@ -54,7 +54,7 @@ let repoUrl = require('./package.json').repository.url.replace(/\.git$/g, '');
 const faviconData = './faviconData.json';
 
 // Формирование и запись диспетчера подключений (style.scss), который компилируется в style.min.css
-let styleImports = '/*!*\n * ВНИМАНИЕ! Этот файл генерируется автоматически.\n * Не пишите сюда ничего вручную, все такие правки будут потеряны.\n * Читайте ./README.md для понимания.\n */\n\n';
+let styleImports = '/* !*\n * ВНИМАНИЕ! Этот файл генерируется автоматически.\n * Не пишите сюда ничего вручную, все такие правки будут потеряны.\n * Читайте ./README.md для понимания.\n */\n\n';
 lists.css.forEach(blockPath => styleImports += '@import \'' + blockPath + '\';\n');
 fs.writeFileSync(dirs.srcPath + 'sass/style.scss', styleImports);
 
