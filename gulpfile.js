@@ -3,30 +3,43 @@
 // Зависимости
 const fs = require('fs');
 const gulp = require('gulp');
-const postcss = require('gulp-postcss'); //преобразование и оптимизация css, js
 const browserSync = require('browser-sync').create();
+const realFavicon = require('gulp-real-favicon'); //создание фавиконки
+const sourcemaps = require('gulp-sourcemaps'); //карты кода
+const buffer = require('vinyl-buffer'); //читает поток данных и сохраняет в буфер для трансформаций
+const merge = require('merge-stream'); //объединяет потоки
+
+const postcss = require('gulp-postcss'); //преобразование и оптимизация css, images
+const atImport = require('postcss-import'); //импорт .css файлов при сборке стилей
+const inlineSVG = require('postcss-inline-svg'); //инлайн svg файлов с параметрами из css
+const objectFitImages = require('postcss-object-fit-images'); //полифилит свойство object-fit
+const sass = require('gulp-sass');  //компиляция scss
+const autoprefixer = require('autoprefixer'); //автопрефиксы
+const cssnano = require('cssnano'); //минификация css
+const mqpacker = require('css-mqpacker'); //конкатенация mediaquery's
+
 const plumber = require('gulp-plumber'); //отмена прерывания из-за ошибок
 const gulpIf = require('gulp-if'); //создание условий
-const sourcemaps = require('gulp-sourcemaps'); //карты кода
-const sass = require('gulp-sass');  //компиляция scss
-const cssnano = require('cssnano'); //минификация css
-const autoprefixer = require('autoprefixer'); //автопрефиксы
-const mqpacker = require('css-mqpacker'); //конкатенация mediaquery's
 const rename = require('gulp-rename'); //переименовывание файлов
 const size = require('gulp-size'); //размер файла
 const del = require('del'); //удаление файлов
 const newer = require('gulp-newer'); //запускает задачи только для обновившихся файлов
+const notify = require('gulp-notify'); //вывод ошибок в систему
+const wait = require('gulp-wait2'); //добавляет задержку между пайпами
+
 const imagemin = require('gulp-imagemin');  //оптимизация изображений
-const mozjpeg = require('imagemin-mozjpeg');  //сжатие jpeg
 const pngquant = require('imagemin-pngquant');  //сжатие png
-const realFavicon = require('gulp-real-favicon'); //создание фавиконки
-const svgstore = require('gulp-svgstore');  //создание спрайта
+const svgstore = require('gulp-svgstore');  //создание svg спрайта
 const spritesmith = require('gulp.spritesmith');  //создание png спрайта
-const buffer = require('vinyl-buffer'); //читает поток данных и сохраняет в буфер для трансформаций
-const merge = require('merge-stream');  //объединяет потоки
+
 const uglify = require('gulp-uglify'); //минификация js
 const concat = require('gulp-concat'); //объединение файлов в один
+
 const ghPages = require('gh-pages');  //запускает деплой в ветку gh-pages
+
+const pug = require('gulp-pug'); //шаблонизатор html
+const prettier = require('gulp-html-beautify'); //бьютификация html
+const pugLinter = require('gulp-pug-lint'); //линтер pug
 
 // Получение настроек проекта из projectConfig.json
 let projectConfig = require('./projectConfig.json');
@@ -34,22 +47,38 @@ let dirs = projectConfig.dirs;
 let lists = getFilesList(projectConfig);
 console.log(lists);
 
+// Получение адреса репозитория
+let repoUrl = require('./package.json').repository.url.replace(/\.git$/g, '');
+
 // Файл с настройками фавиконок
 const faviconData = './faviconData.json';
 
 // Формирование и запись диспетчера подключений (style.scss), который компилируется в style.min.css
-let styleImports = '';
-lists.css.forEach(blockPath => {
-  styleImports += '@import \''+blockPath+'\';\n';
-});
-console.log(`styleImports: ${styleImports}`);
+let styleImports = '/*!*\n * ВНИМАНИЕ! Этот файл генерируется автоматически.\n * Не пишите сюда ничего вручную, все такие правки будут потеряны.\n * Читайте ./README.md для понимания.\n */\n\n';
+lists.css.forEach(blockPath => styleImports += '@import \'' + blockPath + '\';\n');
 fs.writeFileSync(dirs.srcPath + 'sass/style.scss', styleImports);
+
+// Формирование и запись списка примесей (mixins.pug) со списком инклудов всех pug-файлов блоков
+let pugMixins = '//- ВНИМАНИЕ! Этот файл генерируется автоматически. Не пишите сюда ничего вручную!\n//- Читайте ./README.md для понимания.\n\n';
+lists.pug.forEach(blockPath => pugMixins += 'include ' + blockPath + '\n');
+fs.writeFileSync(dirs.srcPath + 'pug/mixins.pug', pugMixins);
 
 // Запуск `NODE_ENV=production npm start [задача]` приведет к сборке без sourcemaps
 const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
 
+// Плагины PostCSS
+let postCssPlugins = [
+  autoprefixer(),
+  mqpacker({
+    sort: true
+  }),
+  atImport(),
+  inlineSVG(),
+  objectFitImages()
+];
+
 // Очистка папки сборки
-gulp.task('clean', function () {
+gulp.task('clean', () => {
   console.log('---------- Очистка папки сборки');
   return del([
     dirs.buildPath + '/**/*',
@@ -57,22 +86,26 @@ gulp.task('clean', function () {
   ]);
 });
 
-// Компиляция SCSS
+// Компиляция SCSS и добавочных стилей
 gulp.task('scss', () => {
   console.log('---------- Компиляция стилей');
   return gulp.src(dirs.srcPath + 'sass/style.scss')
-    .pipe(plumber())
+    .pipe(plumber({
+      errorHandler: (err) => {
+        notify.onError({
+          title: 'Styles compilation error',
+          message: err.message
+        })(err);
+        this.emit('end');
+      }
+    }))
+    .pipe(wait(100))
     .pipe(gulpIf(isDev, sourcemaps.init()))
     .pipe(sass())
-    .pipe(postcss([
-      autoprefixer(),
-      mqpacker({
-        sort: true
-      })
-    ]))
+    .pipe(postcss(postCssPlugins))
     .pipe(gulpIf(!isDev, postcss([cssnano()])))
     .pipe(rename('style.min.css'))
-    .pipe(gulpIf(isDev, sourcemaps.write('.')))
+    .pipe(gulpIf(isDev, sourcemaps.write('/')))
     .pipe(size({
       title: 'Размер',
       showFiles: true,
@@ -82,17 +115,14 @@ gulp.task('scss', () => {
     .pipe(browserSync.stream({match: '**/*.css'}));
 });
 
-// Копирование добавочных css
+// Копирование добавочных css, которые будут подключены отдельными файлами
 gulp.task('copy:css', (cb) => {
   if (projectConfig.copiedCss.length) {
     return gulp.src(projectConfig.copiedCss)
-      .pipe(postcss([
-        autoprefixer(),
-        mqpacker(),
-        cssnano({
-          discardUnused: false  //не удалять неиспользуемые классы
-        })
-      ]))
+      .pipe(postcss(postCssPlugins))
+      .pipe(postcss([cssnano({
+        // discardUnused: false  //не удалять неиспользуемые классы
+      })]))
       .pipe(size({
         title: 'Размер',
         showFiles: true,
@@ -146,7 +176,7 @@ gulp.task('copy:fonts', () => {
     .pipe(gulp.dest(dirs.buildPath + '/fonts'));
 });
 
-gulp.task('favicons', function(done) {
+gulp.task('favicons', (done) => {
   realFavicon.generateFavicon({
     masterPicture: dirs.srcPath + '/img/favicon-lg.png',
     dest: dirs.buildPath + '/img',
@@ -202,15 +232,15 @@ gulp.task('favicons', function(done) {
       errorOnImageTooSmall: false
     },
     markupFile: faviconData
-  }, function() {
+  }, () => {
     done();
   });
 });
 
 // Ручная проверка актуальности данных для favicon. Запускать перед стартом нового проекта.
-gulp.task('check:favicons:update', function(done) {
+gulp.task('check:favicons:update', (done) => {
   let currentVersion = JSON.parse(fs.readFileSync(faviconData)).version;
-  realFavicon.checkForUpdates(currentVersion, function(err) {
+  realFavicon.checkForUpdates(currentVersion, function (err) {
     if (err) {
       throw err;
     }
@@ -219,7 +249,7 @@ gulp.task('check:favicons:update', function(done) {
 
 // Сборка SVG-спрайта для блока sprite-svg
 let spriteSvgPath = dirs.srcPath + dirs.blocksDirName + '/sprite-svg/svg/';
-gulp.task('sprite:svg', (callback) => {
+gulp.task('sprite:svg', (cb) => {
   if ((projectConfig.blocks['sprite-svg']) !== undefined) {
     if (fileExist(spriteSvgPath) !== false) {
       console.log('---------- Сборка SVG спрайта');
@@ -242,18 +272,18 @@ gulp.task('sprite:svg', (callback) => {
         }))
         .pipe(gulp.dest(dirs.srcPath + dirs.blocksDirName + '/sprite-svg/img/'));
     } else {
-      console.log('---------- Сборка SVG спрайта: нет папки с картинками');
-      callback();
+      console.log('---------- Сборка SVG спрайта: ОТМЕНА, нет папки с картинками');
+      cb();
     }
   } else {
     console.log('---------- Сборка SVG спрайта: ОТМЕНА, блок не используется на проекте');
-    callback();
+    cb();
   }
 });
 
 // Сборка png-спрайта
 let spritePngPath = dirs.srcPath + dirs.blocksDirName + '/sprite-png/png/';
-gulp.task('sprite:png', (callback) => {
+gulp.task('sprite:png', (cb) => {
   if ((projectConfig.blocks['sprite-png']) !== undefined) {
     if (fileExist(spritePngPath) !== false) {
       del(dirs.srcPath + dirs.blocksDirName + '/sprite-png/img/*.png');
@@ -280,29 +310,67 @@ gulp.task('sprite:png', (callback) => {
       return merge(imgStream, cssStream);
     } else {
       console.log('---------- Сборка PNG спрайта: ОТМЕНА, нет папки с картинками');
-      callback();
+      cb();
     }
   } else {
     console.log('---------- Сборка PNG спрайта: ОТМЕНА, блок не используется на проекте');
-    callback();
+    cb();
   }
 });
 
-// Сборка HTML
-gulp.task('html', () => {
-  console.log('---------- сборка HTML');
-  return gulp.src(dirs.srcPath + '/*.html')
+// Сборка Pug
+gulp.task('pug', () => {
+  console.log('---------- сборка Pug');
+  // Pug-фильтр, выводящий содержимое pug-файла в виде форматированного текста
+  const filterShowCode = function (text, options) {
+    let lines = text.split('\n');
+    let result = '<pre class="code">\n';
+    if (typeof (options['first-line']) !== 'undefined') result = result + '<code>' + options['first-line'] + '</code>\n';
+    for (let i = 0; i < (lines.length - 1); i++) { // (lines.length - 1) для срезания последней строки (пустая)
+      result = result + '<code>' + lines[i] + '</code>\n';
+    }
+    result = result + '</pre>\n';
+    result = result.replace(/<code><\/code>/g, '<code>&nbsp;</code>');
+    return result;
+  };
+
+  return gulp.src([
+    dirs.srcPath + '/*.pug',
+  ])
     .pipe(plumber())
+    .pipe(pug({
+      data: {
+        repoUrl: repoUrl,
+      },
+      filters: {
+        'show-code': filterShowCode
+      },
+      // compileDebug: false,
+    }))
     .pipe(realFavicon.injectFaviconMarkups(JSON.parse(fs.readFileSync(faviconData)).favicon.html_code))
+    .pipe(prettier())
     .pipe(gulp.dest(dirs.buildPath));
 });
 
+gulp.task('test:pug', () => {
+  return gulp.src('src/**/*.pug')
+    .pipe(pugLinter());
+});
+
 // Конкатенация и углификация Javascript
-gulp.task('js', (callback) => {
+gulp.task('js', (cb) => {
   if (lists.js.length > 0) {
     console.log('---------- Обработка JS');
     return gulp.src(lists.js)
-      .pipe(plumber())
+      .pipe(plumber({
+        errorHandler: (err) => {
+          notify.onError({
+            title: 'Javascript concat/uglify error',
+            message: err.message
+          })(err);
+          this.emit('end');
+        }
+      }))
       .pipe(concat('script.min.js'))
       .pipe(gulpIf(!isDev, uglify()))
       .pipe(size({
@@ -313,13 +381,14 @@ gulp.task('js', (callback) => {
       .pipe(gulp.dest(dirs.buildPath + '/js'));
   } else {
     console.log('---------- Обработка JS: в сборке нет JS-файлов');
-    callback();
+    cb();
   }
 });
 
-// Оптимизация изображений // folder=src/img npm start img:opt
+// Оптимизация изображений (ручная)
+// set folder=src/img npm start img:opt
 const folder = process.env.folder;
-gulp.task('img:opt', (callback) => {
+gulp.task('img:opt', (cb) => {
   if (folder) {
     console.log('---------- Оптимизация картинок');
     return gulp.src(folder + '/*.{jpg,jpeg,gif,png,svg}')
@@ -329,9 +398,9 @@ gulp.task('img:opt', (callback) => {
             removeViewBox: false
           }]
         }),
-        mozjpeg({quality: 80}),
+        imagemin.mozjpeg({quality: 80}),
         pngquant({
-          quality: [0.5, 0.8],
+          quality: [0.6, 0.8],
           floyd: 1,
           speed: 1
         })
@@ -340,16 +409,16 @@ gulp.task('img:opt', (callback) => {
   } else {
     console.log('---------- Оптимизация картинок: ошибка (не указана папка)');
     console.log('---------- Пример вызова команды: folder=src/blocks/block-name/img npm start img:opt');
-    callback();
+    cb();
   }
 });
 
 // Сборка всего
 gulp.task('build', gulp.series(
   'clean',
-  gulp.parallel('sprite:svg', 'sprite:png', 'favicons'),
+  gulp.parallel('sprite:svg', 'sprite:png', /*'favicons'*/),
   gulp.parallel('scss', 'js', 'copy:css', 'copy:img', 'copy:js', 'copy:fonts'),
-  'html'
+  'pug'
 ));
 
 // Публикация на github pages
@@ -365,7 +434,8 @@ gulp.task('serve', gulp.series('build', () => {
     notify: false,
     open: false,
     cors: true,
-    ui: false
+    ui: false,
+    startPath: 'index.html'
   });
   // Слежение за стилями
   gulp.watch([
@@ -399,12 +469,11 @@ gulp.task('serve', gulp.series('build', () => {
   if ((projectConfig.blocks['sprite-png']) !== undefined) {
     gulp.watch('*.png', {cwd: spritePngPath}, gulp.series('watch:sprite:png')); // следит за новыми и удаляемыми файлами
   }
-  // Слежение за html
+  // Слежение за pug
   gulp.watch([
-    '*.html',
-    dirs.blocksDirName + '/**/*.html'
-    ], {cwd: dirs.srcPath},
-    gulp.series('watch:html'));
+    dirs.srcPath + '/**/*.pug',
+    dirs.srcPath + '/*.pug'
+  ], gulp.series('watch:pug'));
 }));
 
 
@@ -413,7 +482,7 @@ gulp.task('watch:copied:js', gulp.series('copy:js', reload));
 gulp.task('watch:fonts', gulp.series('copy:fonts', reload));
 gulp.task('watch:sprite:svg', gulp.series('sprite:svg', reload));
 gulp.task('watch:sprite:png', gulp.series('sprite:png', reload));
-gulp.task('watch:html', gulp.series('html', reload));
+gulp.task('watch:pug', gulp.series('pug', reload));
 gulp.task('watch:js', gulp.series('js', reload));
 
 // Задача по умолчанию
@@ -430,6 +499,7 @@ function getFilesList(config) {
     'css': [],
     'js': [],
     'img': [],
+    'pug': []
   };
 
   // CSS
@@ -448,11 +518,14 @@ function getFilesList(config) {
   for (let blockName in config.blocks) {
     let file = config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + '.js';
     if (fileExist(file)) {
-      res.js.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + '.js');
+      res.js.push(file);
     }
     if (config.blocks[blockName].length) {
       config.blocks[blockName].forEach(elementName => {
-        res.js.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + elementName + '.js');
+        let file = config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + elementName + '.js';
+        if (fileExist(file)) {
+          res.js.push(file);
+        }
       });
     }
   }
@@ -464,6 +537,11 @@ function getFilesList(config) {
     res.img.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/img/*.{jpg,jpeg,gif,png,svg}');
   }
   res.img = config.addImages.concat(res.img);
+
+  // Pug
+  for (let blockName in config.blocks) {
+    res.pug.push('../blocks/' + blockName + '/' + blockName + '.pug');
+  }
 
   return res;
 }

@@ -15,7 +15,7 @@ process.argv[n]
 В нашем случае [2] - имя блока, [3-...] - имена расширений
  */
 const blockName = process.argv[2];
-const defaultExtensions = ['scss', 'html', 'img']; //расширения по умолчанию
+const defaultExtensions = ['scss', 'pug', 'md', 'img']; //расширения по умолчанию
 
 //добавляем к массиву defaultExtensions additional extensions, заданные при вводе run node createBlock, затем удаляем дубликаты
 const extensions = uniqueArray(defaultExtensions.concat(process.argv.slice(3)));
@@ -58,6 +58,14 @@ if (blockName) {
         fileContent = '// (function(){\n// код\n// }());\n';
       }
 
+      else if (extension === 'md') {
+        fileContent = '';
+      }
+
+      else if (extension === 'pug') {
+        fileContent = `//- Все примеси в этом файле должны начинаться c имени блока (${blockName})\\n\\nmixin ${blockName}(text, mods)\\n\\n  //- Принимает:\\n  //-   text    {string} - текст\\n  //-   mods    {string} - список модификаторов\\n  //- Вызов:\\n        +${blockName}('Текст', 'some-mod')\\n\\n  -\\n    // список модификаторов\\n    var allMods = '';\\n    if(typeof(mods) !== 'undefined' && mods) {\\n      var modsList = mods.split(',');\\n      for (var i = 0; i < modsList.length; i++) {\\n        allMods = allMods + ' ${blockName}--' + modsList[i].trim();\\n      }\\n    }\\n\\n  .${blockName}(class=allMods)&attributes(attributes)\\n    div!= text`;
+      }
+
       // Если нужна подпапка для картинок
       else if (extension === 'img') {
         const imgFolder = `${dirPath}img/`;
@@ -68,7 +76,7 @@ if (blockName) {
         }
       }
 
-      if (fileExist(filePath) === false && extension !== 'img') {
+      if (fileExist(filePath) === false && extension !== 'img' && extension !== 'md') {
         fs.writeFile(filePath, fileContent, (err) => {
           if (err) {
             return console.log(`[NTH] Файл не создан: ${err}`);
@@ -78,8 +86,18 @@ if (blockName) {
             console.warn(fileCreateMsg);
           }
         });
-      } else if (extension !== 'img') {
+      } else if (extension !== 'img' && extension !== 'md') {
         console.log(`[NTH] Файл не создан: ${filePath} уже существует`);
+      } else if (extension === 'md') {
+        fs.writeFile(`${dirPath}readme.md`, fileContent, (err) => {
+          if (err) {
+            return console.log(`[NTH] Файл НЕ создан: ${err}`);
+          }
+          console.log(`[NTH] Файл создан: ${dirPath}readme.md`);
+          if (fileCreateMsg) {
+            console.warn(fileCreateMsg);
+          }
+        });
       }
     });
   });

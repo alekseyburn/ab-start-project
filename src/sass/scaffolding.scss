@@ -17,6 +17,32 @@ img {
   height: auto;
 }
 
+// We love Safari
+input[type='search'] {
+  -webkit-appearance: textfield; // stylelint-disable-line  property-no-vendor-prefix
+}
+
+// Avoid 300ms click delay on touch devices that support the `touch-action` CSS property.
+a,
+  // area,
+button,
+[role='button'],
+input,
+label,
+select,
+  // summary,
+textarea {
+  touch-action: manipulation;
+}
+
+// We love EDGE! This is a browser!
+svg {
+  a &,
+  button & {
+    pointer-events: none;
+  }
+}
+
 body {
   min-width: $mobile-width;
   margin: 0 auto;

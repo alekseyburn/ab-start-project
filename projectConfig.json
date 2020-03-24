@@ -3,7 +3,10 @@
     "sprite-svg": [],
     "sprite-png": [
       "__demo"
-    ]
+    ],
+    "page-header": [],
+    "page-footer": [],
+    "object-fit-polyfill": []
   },
   "addCssBefore": [
     "./src/sass/variables.scss",
@@ -14,7 +17,8 @@
     "./src/sass/scaffolding.scss"
   ],
   "addJsBefore": [
-    "./node_modules/svg4everybody/dist/svg4everybody.js"
+    "./node_modules/svg4everybody/dist/svg4everybody.js",
+    "./node_modules/object-fit-images/dist/ofi.js"
   ],
   "addJsAfter": [
     "./src/js/global-script.js"
