@@ -1,8 +1,5 @@
 # Стартовый проект с gulp [![devDependencies Status](https://david-dm.org/alekseyburn/ab-start-project/dev-status.svg)](https://david-dm.org/alekseyburn/ab-start-project?type=dev) [![dependencies Status](https://david-dm.org/alekseyburn/ab-start-project/status.svg)](https://david-dm.org/alekseyburn/ab-start-project)
 
-
-![David](https://img.shields.io/david/dev/alekseyburn/ab-start-project?style=flat-square)
-
 <table>
   <thead>
     <tr>
