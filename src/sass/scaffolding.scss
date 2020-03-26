@@ -35,11 +35,14 @@ textarea {
   touch-action: manipulation;
 }
 
-// We love EDGE! This is a browser!
 svg {
   a &,
   button & {
-    pointer-events: none;
+    pointer-events: none; // We love EDGE! This is a browser!
+  }
+
+  &:not(:root) {
+    overflow: hidden; // Скрыть выступающее за границы в IE
   }
 }
 

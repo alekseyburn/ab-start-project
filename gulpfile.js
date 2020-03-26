@@ -112,7 +112,7 @@ gulp.task('scss', () => {
       showTotal: false,
     }))
     .pipe(gulp.dest(dirs.buildPath + '/css'))
-    .pipe(browserSync.stream({match: '**/*.css'}));
+    .pipe(browserSync.stream());
 });
 
 // Копирование добавочных css, которые будут подключены отдельными файлами
@@ -439,51 +439,40 @@ gulp.task('serve', gulp.series('build', () => {
   });
   // Слежение за стилями
   gulp.watch([
-    dirs.srcPath + 'sass/style.scss',
     dirs.srcPath + dirs.blocksDirName + '/**/*.scss',
-    dirs.srcPath + 'sass/*.scss'
+    dirs.srcPath + 'sass/**.*.scss'
   ], gulp.series('scss'));
   // Слежение за добавочными стилями
   if (projectConfig.copiedCss.length) {
-    gulp.watch(projectConfig.copiedCss, gulp.series('copy:css'));
+    gulp.watch(projectConfig.copiedCss, gulp.series('copy:css', reload));
   }
   // Слежение за JS
   if (lists.js.length) {
-    gulp.watch(lists.js, gulp.series('watch:js'));
+    gulp.watch(lists.js, gulp.series('js', reload));
   }
   // Слежение за добавочными js
   if (projectConfig.copiedJs.length) {
-    gulp.watch(projectConfig.copiedJs, gulp.series('watch:copied:js'));
+    gulp.watch(projectConfig.copiedJs, gulp.series('copy:js', reload));
   }
   // Слежение за изображениями
   if (lists.img.length) {
-    gulp.watch(lists.img, gulp.series('watch:img'));
+    gulp.watch(lists.img, gulp.series('copy:img', reload));
   }
   // Слежение за шрифтами
-  gulp.watch(dirs.srcPath + '/fonts/*.{ttf,woff,woff2,eot,svg}', gulp.series('watch:fonts'));
+  gulp.watch(dirs.srcPath + 'fonts/*.{ttf,woff,woff2,eot,svg}', gulp.series('copy:fonts', reload));
   // Слежение за svg (спрайты)
   if ((projectConfig.blocks['sprite-svg']) !== undefined) {
-    gulp.watch('*.svg', {cwd: spriteSvgPath}, gulp.series('watch:sprite:svg')); // следит за новыми и удаляемыми файлами
+    gulp.watch('*.svg', {cwd: spriteSvgPath}, gulp.series('sprite:svg', reload)); // следит за новыми и удаляемыми файлами
   }
   // Слежение за png (спрайты)
   if ((projectConfig.blocks['sprite-png']) !== undefined) {
-    gulp.watch('*.png', {cwd: spritePngPath}, gulp.series('watch:sprite:png')); // следит за новыми и удаляемыми файлами
+    gulp.watch('*.png', {cwd: spritePngPath}, gulp.series('sprite:png', reload)); // следит за новыми и удаляемыми файлами
   }
   // Слежение за pug
-  gulp.watch([
-    dirs.srcPath + '/**/*.pug',
-    dirs.srcPath + '/*.pug'
-  ], gulp.series('watch:pug'));
+  if (lists.pug.length) {
+    gulp.watch(dirs.srcPath + '**/*.pug', gulp.series('pug', reload));
+  }
 }));
-
-
-gulp.task('watch:img', gulp.series('copy:img', reload));
-gulp.task('watch:copied:js', gulp.series('copy:js', reload));
-gulp.task('watch:fonts', gulp.series('copy:fonts', reload));
-gulp.task('watch:sprite:svg', gulp.series('sprite:svg', reload));
-gulp.task('watch:sprite:png', gulp.series('sprite:png', reload));
-gulp.task('watch:pug', gulp.series('pug', reload));
-gulp.task('watch:js', gulp.series('js', reload));
 
 // Задача по умолчанию
 gulp.task('default', gulp.series('serve'));
@@ -502,49 +491,58 @@ function getFilesList(config) {
     'pug': []
   };
 
-  // CSS
+  // Обход массива с блоками проекта
   for (let blockName in config.blocks) {
-    res.css.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + '.scss');
-    if (config.blocks[blockName].length) {
-      config.blocks[blockName].forEach(elementName => {
-        res.css.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + elementName + '.scss');
-      });
-    }
-  }
-  res.css = res.css.concat(config.addCssAfter);
-  res.css = config.addCssBefore.concat(res.css);
+    let blockPath = config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/';
 
-  // JS
-  for (let blockName in config.blocks) {
-    let file = config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + '.js';
-    if (fileExist(file)) {
-      res.js.push(file);
+    // Разметка (Pug)
+    if (fileExist(blockPath + blockName + '.pug')) {
+      res.pug.push('../' + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + '.pug');
+    } else {
+      console.log('---------- Блок ' + blockName + ' указан как используемый, но не имеет pug-файла.');
     }
-    if (config.blocks[blockName].length) {
-      config.blocks[blockName].forEach(elementName => {
-        let file = config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + elementName + '.js';
-        if (fileExist(file)) {
-          res.js.push(file);
-        }
-      });
-    }
-  }
-  res.js = res.js.concat(config.addJsAfter);
-  res.js = config.addJsBefore.concat(res.js);
 
-  // Images
-  for (let blockName in config.blocks) {
+    // Стили
+    if (fileExist(blockPath + blockName + '.scss')) {
+      res.css.push(blockPath + blockName + '.scss');
+      if (config.blocks[blockName].length) {
+        config.blocks[blockName].forEach((elementName) => {
+          if (fileExist(blockPath + blockName + elementName + '.scss')) {
+            res.css.push(blockPath + blockName + elementName + '.scss');
+          }
+        });
+      }
+    } else {
+      console.log('---------- Блок ' + blockName + ' указан как используемый, но не имеет scss-файла.');
+    }
+
+    // Скрипты
+    if (fileExist(blockPath + blockName + '.js')) {
+      res.js.push(blockPath + blockName + '.js');
+      if (config.blocks[blockName].length) {
+        config.blocks[blockName].forEach((elementName) => {
+          if (fileExist(blockPath + blockName + elementName + '.js')) {
+            res.js.push(blockPath + blockName + elementName + '.js');
+          }
+        });
+      }
+    } else {
+      // console.log('---------- Блок ' + blockName + ' указан как используемый, но не имеет JS-файла.');
+    }
+
+    // Изображения
     res.img.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/img/*.{jpg,jpeg,gif,png,svg}');
   }
-  res.img = config.addImages.concat(res.img);
 
-  // Pug
-  for (let blockName in config.blocks) {
-    res.pug.push('../blocks/' + blockName + '/' + blockName + '.pug');
+    // Добавления
+    res.css = res.css.concat(config.addCssAfter);
+    res.css = config.addCssBefore.concat(res.css);
+    res.js = res.js.concat(config.addJsAfter);
+    res.js = config.addJsBefore.concat(res.js);
+    res.img = config.addImages.concat(res.img);
+
+    return res;
   }
-
-  return res;
-}
 
 /**
  * Проверка существования файла или папки
@@ -552,11 +550,13 @@ function getFilesList(config) {
  * @return {boolean}
  */
 function fileExist(path) {
+  let flag = true;
   try {
-    fs.statSync(path);
-  } catch (err) {
-    return !(err && err.code === 'ENOENT');
+    fs.accessSync(path, fs.F_OK);
+  } catch(e) {
+    flag = false;
   }
+  return flag;
 }
 
 // Перезагрузка браузера

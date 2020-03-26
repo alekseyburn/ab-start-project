@@ -11,8 +11,8 @@
   "scripts": {
     "start": "gulp",
     "test:style": "stylelint \"src/**/*.scss\" --syntax=scss",
-    "test:editorconfig": "editorconfig-cli src/**/*.{pug}",
-    "test": "npm run test:style && npm run test:editorconfig && npm run build",
+    "test:editorconfig": "editorconfig-cli src/**/*.pug",
+    "test": "npm run test:style && npm run build",
     "build": "cross-env NODE_ENV=production npm start build",
     "deploy": "cross-env NODE_ENV=production ./node_modules/.bin/gulp build && cross-env ./node_modules/.bin/gulp deploy",
     "lint-staged": "lint-staged"
