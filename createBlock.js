@@ -32,26 +32,10 @@ if (blockName) {
       let fileCreateMsg = '';
       if (extension === 'scss') {
         fileContent = `// В этом файле должны быть стили для БЭМ-блока ${blockName}, его элементов, \n// модификаторов, псевдоселекторов, псевдоэлементов, @media-условий...\n// Очередность: http://nicothin.github.io/idiomatic-pre-CSS/#priority\n\n.${blockName} {\n\n  $block-name:                &;\n  // #{$block-name}__element {}\n}\n`;
-
-        // Добавим созданный файл
-        let hasThisBlock = false;
-        for (const block in projectConfig.blocks) {
-          if (block === blockName) {
-            hasThisBlock = true;
-            break;
-          }
-        }
-
-        if (!hasThisBlock) {
-          projectConfig.blocks[blockName] = [];
-          const newPackageJson = JSON.stringify(projectConfig, '', 2);
-          fs.writeFileSync('./projectConfig.json', newPackageJson);
-          fileCreateMsg = '[NTH] Подключение блока добавлено в projectConfig.json';
-        }
       }
 
       else if (extension === 'html') {
-        fileContent = '<div class="' + blockName + '">content</div>\n';
+        fileContent = `<div class="${blockName}">content</div>\n`;
       }
 
       else if (extension === 'js') {
@@ -100,6 +84,21 @@ if (blockName) {
         });
       }
     });
+
+    // Добавим созданный файл
+    let hasThisBlock = false;
+    for (const block in projectConfig.blocks) {
+      if (block === blockName) {
+        hasThisBlock = true;
+        break;
+      }
+    }
+    if (!hasThisBlock) {
+      projectConfig.blocks[blockName] = [];
+      const newPackageJson = JSON.stringify(projectConfig, '', 2);
+      fs.writeFileSync('./projectConfig.json', newPackageJson);
+      console.log('[NTH] Подключение блока добавлено в projectConfig.json');
+    }
   });
 } else {
   console.log(`[NTH] Отмена операции: не указан блок`);

@@ -45,7 +45,7 @@ const pugLinter = require('gulp-pug-lint'); //линтер pug
 let projectConfig = require('./projectConfig.json');
 let dirs = projectConfig.dirs;
 let lists = getFilesList(projectConfig);
-console.log(lists);
+// console.log(lists);
 
 // Получение адреса репозитория
 let repoUrl = require('./package.json').repository.url.replace(/\.git$/g, '');
@@ -101,7 +101,7 @@ gulp.task('scss', () => {
     }))
     .pipe(wait(100))
     .pipe(gulpIf(isDev, sourcemaps.init()))
-    .pipe(sass())
+    .pipe(sass({includePaths: [__dirname+'/']}))
     .pipe(postcss(postCssPlugins))
     .pipe(gulpIf(!isDev, postcss([cssnano()])))
     .pipe(rename('style.min.css'))
@@ -320,7 +320,7 @@ gulp.task('sprite:png', (cb) => {
 
 // Сборка Pug
 gulp.task('pug', () => {
-  console.log('---------- сборка Pug');
+  console.log('---------- Сборка Pug');
   // Pug-фильтр, выводящий содержимое pug-файла в виде форматированного текста
   const filterShowCode = function (text, options) {
     let lines = text.split('\n');
@@ -335,7 +335,7 @@ gulp.task('pug', () => {
   };
 
   return gulp.src([
-    dirs.srcPath + '/*.pug',
+    dirs.srcPath + '*.pug',
   ])
     .pipe(plumber())
     .pipe(pug({
@@ -438,10 +438,18 @@ gulp.task('serve', gulp.series('build', () => {
     startPath: 'index.html'
   });
   // Слежение за стилями
-  gulp.watch([
-    dirs.srcPath + dirs.blocksDirName + '/**/*.scss',
-    dirs.srcPath + 'sass/**.*.scss'
-  ], gulp.series('scss'));
+  let stylePaths = [
+    dirs.srcPath + 'sass/style.scss'
+  ];
+  // for (let block of lists.blocksDirs) {
+  //   stylePaths.push(dirs.srcPath + block + '*.scss');
+  // }
+  for (let i = 0, len = lists.blocksDirs.length; i < len; ++i) {
+    stylePaths.push(dirs.srcPath + lists.blocksDirs[i] + '*.scss');
+  }
+  stylePaths = stylePaths.concat(projectConfig.addCssBefore, projectConfig.addCssAfter);
+  gulp.watch(stylePaths, gulp.series('scss'));
+
   // Слежение за добавочными стилями
   if (projectConfig.copiedCss.length) {
     gulp.watch(projectConfig.copiedCss, gulp.series('copy:css', reload));
@@ -470,7 +478,14 @@ gulp.task('serve', gulp.series('build', () => {
   }
   // Слежение за pug
   if (lists.pug.length) {
-    gulp.watch(dirs.srcPath + '**/*.pug', gulp.series('pug', reload));
+    let pugPaths = [
+      dirs.srcPath + '*.pug',
+      dirs.srcPath + 'pug/*.pug'
+    ];
+    for (let block of lists.blocksDirs) {
+      pugPaths.push(dirs.srcPath + block + '*.pug');
+    }
+    gulp.watch(pugPaths, gulp.series('pug', reload));
   }
 }));
 
@@ -488,61 +503,68 @@ function getFilesList(config) {
     'css': [],
     'js': [],
     'img': [],
-    'pug': []
+    'pug': [],
+    'blocksDirs': []
   };
 
   // Обход массива с блоками проекта
   for (let blockName in config.blocks) {
     let blockPath = config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/';
 
-    // Разметка (Pug)
-    if (fileExist(blockPath + blockName + '.pug')) {
-      res.pug.push('../' + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + '.pug');
-    } else {
-      console.log('---------- Блок ' + blockName + ' указан как используемый, но не имеет pug-файла.');
-    }
-
-    // Стили
-    if (fileExist(blockPath + blockName + '.scss')) {
-      res.css.push(blockPath + blockName + '.scss');
-      if (config.blocks[blockName].length) {
-        config.blocks[blockName].forEach((elementName) => {
-          if (fileExist(blockPath + blockName + elementName + '.scss')) {
-            res.css.push(blockPath + blockName + elementName + '.scss');
-          }
-        });
+    if (fileExist(blockPath)) {
+      // Разметка (Pug)
+      if (fileExist(blockPath + blockName + '.pug')) {
+        res.pug.push('../' + config.dirs.blocksDirName + '/' + blockName + '/' + blockName + '.pug');
+      } else {
+        console.log('---------- Блок ' + blockName + ' указан как используемый, но не имеет pug-файла.');
       }
-    } else {
-      console.log('---------- Блок ' + blockName + ' указан как используемый, но не имеет scss-файла.');
-    }
 
-    // Скрипты
-    if (fileExist(blockPath + blockName + '.js')) {
-      res.js.push(blockPath + blockName + '.js');
-      if (config.blocks[blockName].length) {
-        config.blocks[blockName].forEach((elementName) => {
-          if (fileExist(blockPath + blockName + elementName + '.js')) {
-            res.js.push(blockPath + blockName + elementName + '.js');
-          }
-        });
+      // Стили
+      if (fileExist(blockPath + blockName + '.scss')) {
+        res.css.push(blockPath + blockName + '.scss');
+        if (config.blocks[blockName].length) {
+          config.blocks[blockName].forEach((elementName) => {
+            if (fileExist(blockPath + blockName + elementName + '.scss')) {
+              res.css.push(blockPath + blockName + elementName + '.scss');
+            }
+          });
+        }
+      } else {
+        console.log('---------- Блок ' + blockName + ' указан как используемый, но не имеет scss-файла.');
       }
-    } else {
-      // console.log('---------- Блок ' + blockName + ' указан как используемый, но не имеет JS-файла.');
-    }
 
-    // Изображения
-    res.img.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/img/*.{jpg,jpeg,gif,png,svg}');
+      // Скрипты
+      if (fileExist(blockPath + blockName + '.js')) {
+        res.js.push(blockPath + blockName + '.js');
+        if (config.blocks[blockName].length) {
+          config.blocks[blockName].forEach((elementName) => {
+            if (fileExist(blockPath + blockName + elementName + '.js')) {
+              res.js.push(blockPath + blockName + elementName + '.js');
+            }
+          });
+        }
+      } else {
+        // console.log('---------- Блок ' + blockName + ' указан как используемый, но не имеет JS-файла.');
+      }
+
+      // Изображения
+      res.img.push(config.dirs.srcPath + config.dirs.blocksDirName + '/' + blockName + '/img/*.{jpg,jpeg,gif,png,svg}');
+
+      res.blocksDirs.push(config.dirs.blocksDirName + '/' + blockName + '/');
+    } else {
+      console.log('ERR ------ Блок ' + blockPath + ' указан как используемый, но такой папки нет!');
+    }
   }
 
-    // Добавления
-    res.css = res.css.concat(config.addCssAfter);
-    res.css = config.addCssBefore.concat(res.css);
-    res.js = res.js.concat(config.addJsAfter);
-    res.js = config.addJsBefore.concat(res.js);
-    res.img = config.addImages.concat(res.img);
+  // Добавления
+  res.css = res.css.concat(config.addCssAfter);
+  res.css = config.addCssBefore.concat(res.css);
+  res.js = res.js.concat(config.addJsAfter);
+  res.js = config.addJsBefore.concat(res.js);
+  res.img = config.addImages.concat(res.img);
 
-    return res;
-  }
+  return res;
+}
 
 /**
  * Проверка существования файла или папки
@@ -553,7 +575,7 @@ function fileExist(path) {
   let flag = true;
   try {
     fs.accessSync(path, fs.F_OK);
-  } catch(e) {
+  } catch (e) {
     flag = false;
   }
   return flag;
