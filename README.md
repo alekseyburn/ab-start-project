@@ -1,4 +1,4 @@
-# Стартовый проект с gulp [![devDependencies Status](https://david-dm.org/alekseyburn/ab-start-project/dev-status.svg)](https://david-dm.org/alekseyburn/ab-start-project?type=dev) [![dependencies Status](https://david-dm.org/alekseyburn/ab-start-project/status.svg)](https://david-dm.org/alekseyburn/ab-start-project)
+# Стартовый проект с gulp ![Test Status](https://travis-ci.com/alekseyburn/ab-start-project.svg?branch=master) [![devDependencies Status](https://david-dm.org/alekseyburn/ab-start-project/dev-status.svg)](https://david-dm.org/alekseyburn/ab-start-project?type=dev) [![dependencies Status](https://david-dm.org/alekseyburn/ab-start-project/status.svg)](https://david-dm.org/alekseyburn/ab-start-project)
 
 <table>
   <thead>
