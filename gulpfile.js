@@ -307,7 +307,7 @@ gulp.task('js', (cb) => {
         }
       }))
       .pipe(concat('script.min.js'))
-      .pipe(gulpIf(!isDev, uglify()))
+      .pipe(gulpIf(!isDev, uglify().on('error', function(e){console.log(e);})))
       .pipe(size({
         title: 'Размер',
         showFiles: true,
@@ -359,7 +359,15 @@ gulp.task('build', gulp.series(
 // Публикация на github pages
 gulp.task('deploy', (cb) => {
   console.log('---------- Публикация содержимого ./build/ на GH pages');
+  let ghPagesUrl;
+  if (repoUrl) {
+    let urlParts = repoUrl.split('/');
+    if (urlParts[2] === 'github.com') {
+      ghPagesUrl = 'http://' + urlParts[3] + '.github.io/' + urlParts[4] + '/';
+    }
+  }
   ghPages.publish('build', cb);
+  console.log('---------- ' + ghPagesUrl);
 });
 
 // Локальный сервер

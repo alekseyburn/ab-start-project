@@ -6,7 +6,7 @@
   "author": "Aleksey Korshakov",
   "repository": {
     "type": "git",
-    "url": "https://github.com//alekseyburn/ab-start-project.git"
+    "url": "https://github.com/alekseyburn/ab-start-project.git"
   },
   "scripts": {
     "start": "gulp",
