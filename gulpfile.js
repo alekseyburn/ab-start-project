@@ -7,6 +7,8 @@ const browserSync = require('browser-sync').create();
 const sourcemaps = require('gulp-sourcemaps'); //карты кода
 const buffer = require('vinyl-buffer'); //читает поток данных и сохраняет в буфер для трансформаций
 const merge = require('merge-stream'); //объединяет потоки
+const through2 = require('through2'); //создание своих плагинов обработки
+const chalk = require('chalk');
 
 const postcss = require('gulp-postcss'); //преобразование и оптимизация css, images
 const atImport = require('postcss-import'); //импорт .css файлов при сборке стилей
@@ -39,6 +41,7 @@ const ghPages = require('gh-pages');  //запускает деплой в ве�
 const pug = require('gulp-pug'); //шаблонизатор html
 const prettier = require('gulp-html-beautify'); //бьютификация html
 const pugLinter = require('gulp-pug-lint'); //линтер pug
+const getClassesFromHtml = require('get-classes-from-html');
 
 // Получение настроек проекта из projectConfig.json
 let projectConfig = require('./projectConfig.json');
@@ -97,7 +100,7 @@ gulp.task('scss', () => {
     }))
     .pipe(wait(100))
     .pipe(gulpIf(isDev, sourcemaps.init()))
-    .pipe(sass({includePaths: [__dirname+'/']}))
+    .pipe(sass({includePaths: [__dirname + '/']}))
     .pipe(postcss(postCssPlugins))
     .pipe(gulpIf(!isDev, postcss([cssnano()])))
     .pipe(rename('style.min.css'))
@@ -255,6 +258,7 @@ gulp.task('sprite:png', (cb) => {
 });
 
 // Сборка Pug
+let classes = [];
 gulp.task('pug', () => {
   console.log('---------- Сборка Pug');
   // Pug-фильтр, выводящий содержимое pug-файла в виде форматированного текста
@@ -283,6 +287,25 @@ gulp.task('pug', () => {
       },
       // compileDebug: false,
     }))
+    .pipe(through2.obj(function (file, enc, cb) {
+      if (file.isNull()) {
+        cb(null, file);
+        return;
+      }
+      const data = file.contents.toString();
+      let thisClasses = getClassesFromHtml(data);
+      thisClasses.forEach((item) => {
+        if (item.indexOf('__') + 1 === 0 && item.indexOf('--') + 1 === 0) {
+          classes.push(item)
+        }
+      });
+      file.contents = Buffer.from(data);
+      this.push(file);
+      cb();
+    }))
+    .on('end', function () {
+      console.log(classes);
+    })
     .pipe(prettier())
     .pipe(gulp.dest(dirs.buildPath));
 });
@@ -307,7 +330,9 @@ gulp.task('js', (cb) => {
         }
       }))
       .pipe(concat('script.min.js'))
-      .pipe(gulpIf(!isDev, uglify().on('error', function(e){console.log(e);})))
+      .pipe(gulpIf(!isDev, uglify().on('error', function (e) {
+        console.log(e);
+      })))
       .pipe(size({
         title: 'Размер',
         showFiles: true,
@@ -384,13 +409,11 @@ gulp.task('serve', gulp.series('build', () => {
   let stylePaths = [
     dirs.srcPath + 'sass/style.scss'
   ];
-  // for (let block of lists.blocksDirs) {
-  //   stylePaths.push(dirs.srcPath + block + '*.scss');
-  // }
-  for (let i = 0, len = lists.blocksDirs.length; i < len; ++i) {
-    stylePaths.push(dirs.srcPath + lists.blocksDirs[i] + '*.scss');
+  for (let block of lists.blocksDirs) {
+    stylePaths.push(dirs.srcPath + block + '*.scss');
   }
   stylePaths = stylePaths.concat(projectConfig.addCssBefore, projectConfig.addCssAfter);
+  console.log(stylePaths);
   gulp.watch(stylePaths, gulp.series('scss'));
 
   // Слежение за добавочными стилями
