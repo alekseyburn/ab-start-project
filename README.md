@@ -20,10 +20,6 @@
       <td><code>npm start ЗАДАЧА</code></td>
     </tr>
     <tr>
-      <td><code>npm start check:favicons:update</code></td>
-      <td>Проверка актуальности данных <a href="https://realfavicongenerator.net/">генератора favicon</a></td>
-    </tr>
-    <tr>
       <td><code>set folder=src/img npm start img:opt</code></td>
       <td>Оптимизация изображений из папки <code>./src/img</code> (или любой другой)</td>
     </tr>
