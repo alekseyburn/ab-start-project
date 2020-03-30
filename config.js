@@ -7,12 +7,16 @@ let config =
   "ignoredBlocks": [
     "no-js"
   ],
+  "alwaysAddBlocks": [
+    "sprite-svg",
+    "sprite-png"
+  ],
   "blocks": [
     "page-header",
     "page-footer",
-    "else",
     "nothing",
-    "none"
+    "sprite-svg",
+    "sprite-png"
   ],
   "addStyleBefore": [
     "./src/sass/variables.scss",
@@ -24,12 +28,14 @@ let config =
   ],
   "addJsBefore": [],
   "addJsAfter": [
-    "./src/js/global-script.js"
+    "./script.js"
   ],
-  "addImages": [],
-  "addAssets": [],
-  "copiedCss": [],
-  "copiedJs": [],
+  "addAssets": {
+    "./src/img/avatar-*": "img/",
+    "./src/img/DSSC_*": "img/",
+    "./src/fonts/sample.woff2": "fonts/",
+    "./src/favicon/*.{png,ico,svg,xml,webmanifest}": "img/favicon"
+  },
   "dir": {
     "src": "./src/",
     "build": "./build/",

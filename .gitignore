@@ -10,9 +10,11 @@ node_modules/
 npm-debug.*
 build/
 Thumbs.db
-src/sass/style.scss
+
+src/js/entry.js
 src/pug/mixins.pug
-src/blocks/sprite-svg/img/sprite-svg.svg
+
+src/blocks/sprite-svg/img/sprite.svg
 src/blocks/sprite-png/sprite-png.scss
 src/blocks/sprite-png/img/sprite-*.png
 package-lock.json
