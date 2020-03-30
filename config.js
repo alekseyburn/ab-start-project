@@ -16,7 +16,8 @@ let config =
     "page-footer",
     "nothing",
     "sprite-svg",
-    "sprite-png"
+    "sprite-png",
+    "hello"
   ],
   "addStyleBefore": [
     "./src/sass/variables.scss",

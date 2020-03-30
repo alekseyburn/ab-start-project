@@ -11,7 +11,7 @@ const plumber = require('gulp-plumber');
 const rename = require('gulp-rename');
 const replace = require('gulp-replace');
 const jsonFormat = require('json-format');
-const htmlbeautify = require('gulp-html-beautify');
+const prettyHtml = require('gulp-pretty-html');
 const browserSync = require('browser-sync').create();
 const getClassesFromHtml = require('get-classes-from-html');
 const sass = require('gulp-sass');  //компиляция scss
@@ -55,6 +55,13 @@ let pugOption = {
   data: {repoUrl: repoUrl},
   filters: {'show-code': filterShowCode}
 };
+// Настройки html-pretty
+let prettyOption = {
+  indent_size: 2,
+  indent_char: ' ',
+  unformatted: ['code', 'em', 'strong', 'span', 'i', 'b', 'br'],
+  content_unformatted: []
+};
 // Плагины PostCSS
 let postCssPlugins = [
   autoprefixer(),
@@ -71,6 +78,7 @@ function compilePug() {
     .pipe(plumber())
     .pipe(debug({title: 'Compiles '}))
     .pipe(pug(pugOption))
+    .pipe(prettyHtml(prettyOption))
     .pipe(through2.obj(getClassesToBlocksList))
     .on('end', function () {
       checkBlockList(true) // Компилируются все; можно убирать блоки, которых больше нет
@@ -86,6 +94,7 @@ function compilePugFast() {
     .pipe(plumber())
     .pipe(debug({title: 'Compiles '}))
     .pipe(pug(pugOption))
+    .pipe(prettyHtml(prettyOption))
     .pipe(through2.obj(getClassesToBlocksList))
     .on('end', checkBlockList)
     .pipe(dest(dir.build));
@@ -337,7 +346,7 @@ function serve() {
   watch([`${dir.blocks}sprite-svg/svg/*.svg`], {
     events: ['all'],
     delay: 100
-  }, series(generateSvgSprite, copyImg, reload));
+  }, series(generateSvgSprite, copyImg));
   watch([`${dir.blocks}sprite-png/png/*.png`], {
     events: ['all'],
     delay: 100
