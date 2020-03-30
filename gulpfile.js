@@ -37,24 +37,33 @@ const merge = require('merge-stream'); //объединяет потоки
 
 // Настройки из файла
 let config = require('./config.js');
+
 // Директории из настроек (dir.src = './src/', dir.build = './build/')
 let dir = config.dir;
-dir.blocks = `${dir.src}blocks/`;
+
+// dir.blocks = `${dir.src}blocks/`;
+
 // Список блоков, который будет получен из классов html после компиляции pug
 let blocksList = [];
+
 // Старый список блоков в виде строки
 let oldBlocksListString = JSON.stringify(config.blocks);
+
 // Адрес репозитория
 let repoUrl = require('./package.json').repository.url.replace(/\.git$/g, '');
+
 // Определение: разработка это или финальная сборка
 const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
+
 // Сообщение для компилируемых файлов
 let doNotEditMsg = '\n ВНИМАНИЕ! Этот файл генерируется автоматически.\n Любые изменения этого файла будут потеряны при следующей компиляции.\n Любое изменение проекта без возможности компиляции ДОЛЬШЕ И ДОРОЖЕ в 2-3 раза.\n\n';
+
 // Настройки pug-компилятора
 let pugOption = {
   data: {repoUrl: repoUrl},
   filters: {'show-code': filterShowCode}
 };
+
 // Настройки html-pretty
 let prettyOption = {
   indent_size: 2,
@@ -62,6 +71,7 @@ let prettyOption = {
   unformatted: ['code', 'em', 'strong', 'span', 'i', 'b', 'br'],
   content_unformatted: []
 };
+
 // Плагины PostCSS
 let postCssPlugins = [
   autoprefixer(),
@@ -186,11 +196,8 @@ exports.writeJsRequiresFile = writeJsRequiresFile;
 function copyAssets(cb) {
   for (let item in config.addAssets) {
     let dest = `${dir.build}${config.addAssets[item]}`;
-    // (async () => {
-    //   await cpy(item, dest);
     cpy(item, dest);
     console.log(`---------- Скопировано: ${item} -> ${dest}`);
-    // })();
   }
   cb();
 }
@@ -229,7 +236,6 @@ function generateSvgSprite(cb) {
       .pipe(rename('sprite.svg'))
       .pipe(dest(`${dir.blocks}sprite-svg/img/`));
   } else {
-    console.log('файлов для спрайта svg нет');
     cb();
   }
 }
@@ -287,6 +293,7 @@ function serve() {
     open: false,
     notify: false
   });
+
   // Файлы разметки страниц (изменение, добавление)
   watch([`${dir.src}pages/**/*.pug`], {
     events: ['change', 'add'],
@@ -297,6 +304,7 @@ function serve() {
     parallel(compileSass, buildJs),
     reload
   ));
+
   // Файлы разметки страниц (удаление)
   watch([`${dir.src}pages/**/*.pug`])
     .on('unlink', function (path, stats) {
@@ -310,6 +318,7 @@ function serve() {
         console.log(`---------- ${filePathInBuildDir} удалён`);
       });
     });
+
   // Файлы разметки БЭМ-блоков (изменение, добавление)
   watch([`${dir.blocks}**/*.pug`], {
     events: ['change', 'add'],
@@ -320,9 +329,11 @@ function serve() {
     compileSass,
     reload
   ));
+
   // Файлы разметки БЭМ-блоков (удаление)
   watch([`${dir.blocks}**/*.pug`], {events: ['unlink'], delay: 100}, series(writePugMixinsFile));
-  // Глобальные pug-файлы, кроме файла примесей (все события)
+
+  // Шаблонные pug-файлы, кроме файла примесей (все события)
   watch([`${dir.src}pug/**/*.pug`, `!${dir.src}pug/mixins.pug`], {
     delay: 100
   }, series(
@@ -331,17 +342,22 @@ function serve() {
     parallel(compileSass, buildJs),
     reload
   ));
+
   // Стилевые файлы БЭМ-блоков (любые события)
   watch([`${dir.blocks}**/*.scss`], {events: ['all'], delay: 100}, series(writeSassImportsFile, compileSass));
+
   // Глобальные стилевые файлы, кроме файла с импортами (любые события)
   watch([`${dir.src}sass/**/*.scss`, `!${dir.src}sass/style.scss`], {events: ['all'], delay: 100}, series(compileSass));
+
   // Глобальные Js-файлы и js-файлы блоков
   watch([`${dir.src}js/**/*.js`, `!${dir.src}js/entry.js`, `${dir.blocks}**/*.js`], {
     events: ['all'],
     delay: 100
   }, series(writeJsRequiresFile, buildJs, reload));
+
   // Изображения БЭМ-блоков
   watch([`${dir.blocks}**/img/*.{jpg,jpeg,png,gif,svg,webp}`], {events: ['all'], delay: 100}, series(copyImg, reload));
+
   // Слежение за спрайтами
   watch([`${dir.blocks}sprite-svg/svg/*.svg`], {
     events: ['all'],
@@ -445,7 +461,7 @@ function uniqueArray(arr) {
 }
 
 /**
- * СЛУЖЕБНАЯ: Добавляет список классов из принятого HTML в переменную blocksList, используется в потоке обработки Pug.
+ * Добавление списка классов из принятого HTML в глобальную переменную blocksList, используется в потоке обработки Pug.
  * @param  {object}   file Обрабатываемый файл
  * @param  {string}   enc  Кодировка
  * @param  {Function} cb   Коллбэк
@@ -487,7 +503,7 @@ function getClassesToBlocksList(file, enc, cb) {
 }
 
 /**
- * СЛУЖЕБНАЯ: Обновляет глобальную переменную с актуальным список блоков
+ * Обновление глобальной переменной с актуальным списком блоков
  * @param  {Boolean} removeBlocks Удалять ли не найденные блоки
  */
 function checkBlockList(removeBlocks = false) {
