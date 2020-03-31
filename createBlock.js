@@ -32,7 +32,7 @@ if (blockName) {
       if (extension === 'scss') {
         fileContent = `// В этом файле должны быть стили для БЭМ-блока ${blockName}, его элементов,\n// модификаторов, псевдоселекторов, псевдоэлементов, @media-условий...\n// Очередность: http://nicothin.github.io/idiomatic-pre-CSS/#priority\n\n.${blockName} {\n\n  $block-name:                &; // #{$block-name}__element\n}\n`;
       } else if (extension === 'js') {
-        fileContent = '// (function(){\n// код\n// }());\n';
+        fileContent = `/* global document */\n\n// const ready = require('../../js/utils/documentReady.js');\n\n// ready(function(){\n//   \n// });\n`;
       } else if (extension === 'md') {
         fileContent = '';
       } else if (extension === 'pug') {

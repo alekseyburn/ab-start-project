@@ -10,10 +10,11 @@
   },
   "scripts": {
     "start": "gulp",
+    "test": "stylelint \"src/**/*.scss\" --syntax=scss && eslint src/blocks/**/*.js src/js/**/*.js",
     "test:style": "stylelint \"src/**/*.scss\" --syntax=scss",
     "test:js": "eslint src/blocks/**/*.js src/js/**/*.js",
     "build": "gulp build",
-    "deploy": "cross-env ./node_modules/.bin/gulp build && cross-env ./node_modules/.bin/gulp deploy",
+    "deploy": "cross-env gulp build && gulp deploy",
     "lint-staged": "lint-staged"
   },
   "lint-staged": {

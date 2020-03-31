@@ -256,7 +256,7 @@ function buildJs() {
   return src(`${dir.src}js/entry.js`)
     .pipe(plumber())
     .pipe(webpackStream({
-      mode: 'development',
+      mode: 'production',
       entry: {
         'bundle': `./${dir.src}js/entry.js`,
       },
