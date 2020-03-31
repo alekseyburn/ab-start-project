@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use strict';
 
 // Пакеты, использующиеся при обработке
@@ -9,7 +10,6 @@ const debug = require('gulp-debug');
 const through2 = require('through2');
 const plumber = require('gulp-plumber');
 const rename = require('gulp-rename');
-const replace = require('gulp-replace');
 const prettyHtml = require('gulp-pretty-html');
 const browserSync = require('browser-sync').create();
 const getClassesFromHtml = require('get-classes-from-html');
@@ -34,7 +34,6 @@ const path = require('path');
 const webpackStream = require('webpack-stream');
 
 // Глобальные настройки запуска
-const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
 const nth = {};
 nth.config = require('./config.js');
 nth.blocksFromHtml = []; // Блоки из html (только если имеют свою папку блока)
@@ -332,7 +331,7 @@ function serve() {
 
   // Страницы: удаление
   watch([`${dir.src}pages/**/*.pug`])
-    .on('unlink', function (path, stats) {
+    .on('unlink', function (path) {
       console.log(`path: ${path}`);
       // console.log(`dir.src.replace('./', '') + 'pages/': ${dir.src.replace('./', '') + 'pages/'}`);
       // console.log(`path.replace(dir.src.replace('./', '') + 'pages/', dir.build): ${path.replace(`${dir.src.replace('./', '')}pages\\`, dir.build)}`);
@@ -523,13 +522,4 @@ function getDirectories(ext) {
  */
 function getArraysDiff(a1, a2) {
   return a1.filter(i => !a2.includes(i)).concat(a2.filter(i => !a1.includes(i)))
-}
-
-/**
- * Уникализация массива
- * @param  {array} arr Массив, в котором могут быть неуникальные элементы
- * @return {array}     Массив без повторов
- */
-function uniqueArray(arr) {
-  return Array.from(new Set(arr));
 }
