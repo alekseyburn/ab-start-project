@@ -10,13 +10,10 @@ const through2 = require('through2');
 const plumber = require('gulp-plumber');
 const rename = require('gulp-rename');
 const replace = require('gulp-replace');
-const jsonFormat = require('json-format');
 const prettyHtml = require('gulp-pretty-html');
 const browserSync = require('browser-sync').create();
 const getClassesFromHtml = require('get-classes-from-html');
 const sass = require('gulp-sass');  //компиляция scss
-const notify = require('gulp-notify'); //вывод ошибок в систему
-const gulpIf = require('gulp-if'); //создание условий
 const postcss = require('gulp-postcss'); //преобразование и оптимизация css, images
 const autoprefixer = require('autoprefixer'); //автопрефиксы
 const mqpacker = require('css-mqpacker'); //конкатенация mediaquery's
@@ -24,7 +21,6 @@ const atImport = require('postcss-import'); //импорт .css файлов п�
 const cssnano = require('cssnano'); //минификация css
 const inlineSVG = require('postcss-inline-svg'); //инлайн svg файлов с параметрами из css
 const objectFitImages = require('postcss-object-fit-images'); //полифилит свойство object-fit
-const source = require('vinyl-source-stream');
 const buffer = require('vinyl-buffer');
 const uglify = require('gulp-uglify');
 const cpy = require('cpy');
@@ -199,9 +195,10 @@ function writeSassImportsFile(cb) {
   nth.config.addStyleBefore.forEach((src) => {
     newScssImportsList.push(src);
   });
-  nth.blocksFromHtml.forEach((block) => {
-    let src = `${dir.blocks}${block}/${block}.scss`;
-    if (fileExist(src)) newScssImportsList.push(src);
+  let allBlocksWithScssFiles = getDirectories('scss');
+  allBlocksWithScssFiles.forEach(function(blockWithScssFile){
+    if (nth.blocksFromHtml.indexOf(blockWithScssFile) === -1) return;
+    newScssImportsList.push(`${dir.blocks}${blockWithScssFile}/${blockWithScssFile}.scss`);
   });
   nth.config.addStyleAfter.forEach((src) => {
     newScssImportsList.push(src);
@@ -241,8 +238,10 @@ function writeJsRequiresFile(cb) {
   nth.config.addJsBefore.forEach((src) => {
     jsRequires += `require('${src}');\n`;
   });
-  nth.blocksFromHtml.forEach((block) => {
-    if (fileExist(`${dir.blocks}${block}/${block}.js`)) jsRequires += `require('../blocks/${block}/${block}.js');\n`;
+  let allBlocksWithJsFiles = getDirectories('js');
+  allBlocksWithJsFiles.forEach(function(blockWithJsFile){
+    if (nth.blocksFromHtml.indexOf(blockWithJsFile) === -1) return;
+    jsRequires += `require('../blocks/${blockWithJsFile}/${blockWithJsFile}.js');\n`;
   });
   nth.config.addJsAfter.forEach((src) => {
     jsRequires += `require('${src}');\n`;
@@ -313,7 +312,14 @@ function serve() {
     notify: false
   });
 
-  // Файлы разметки страниц (изменение, добавление)
+  // Конфигурационный файл
+  watch([`config.js`], { events: ['change'], delay: 100 }, series(
+    parallel(writeSassImportsFile, writeJsRequiresFile),
+    parallel(compileSass, buildJs),
+    reload
+  ));
+
+  // Страницы: изменение, добавление
   watch([`${dir.src}pages/**/*.pug`], {
     events: ['change', 'add'],
     delay: 100
@@ -324,7 +330,7 @@ function serve() {
     reload
   ));
 
-  // Файлы разметки страниц (удаление)
+  // Страницы: удаление
   watch([`${dir.src}pages/**/*.pug`])
     .on('unlink', function (path, stats) {
       console.log(`path: ${path}`);
@@ -338,18 +344,20 @@ function serve() {
       });
     });
 
-  // Файлы разметки блоков (изменение, добавление)
-  watch([`${dir.blocks}**/*.pug`], {
-    events: ['change', 'add'],
-    delay: 100
-  }, series(
+  // Разметка Блоков: изменение
+  watch([`${dir.blocks}**/*.pug`], { events: ['change'], delay: 100 }, series(
     compilePug,
-    writeSassImportsFile,
-    compileSass,
     reload
   ));
 
-  // Файлы разметки блоков (удаление)
+  // Разметка Блоков: добавление
+  watch([`${dir.blocks}**/*.pug`], { events: ['add'], delay: 100 }, series(
+    writePugMixinsFile,
+    compilePug,
+    reload
+  ));
+
+  // Разметка Блоков: удаление
   watch([`${dir.blocks}**/*.pug`], {events: ['unlink'], delay: 100}, writePugMixinsFile);
 
   // Шаблонные pug-файлы, кроме файла примесей (все события)
@@ -362,8 +370,16 @@ function serve() {
     reload
   ));
 
-  // Стилевые файлы блоков (любые события)
-  watch([`${dir.blocks}**/*.scss`], {events: ['all'], delay: 100}, series(writeSassImportsFile, compileSass));
+  // Стили Блоков: изменение
+  watch([`${dir.blocks}**/*.scss`], { events: ['change'], delay: 100 }, series(
+    compileSass,
+  ));
+
+  // Стили Блоков: добавление
+  watch([`${dir.blocks}**/*.scss`], { events: ['add'], delay: 100 }, series(
+    writeSassImportsFile,
+    compileSass,
+  ));
 
   // Глобальные стилевые файлы, кроме файла с импортами (любые события)
   watch([`${dir.src}sass/**/*.scss`, `!${dir.src}sass/style.scss`], {events: ['all'], delay: 100}, series(compileSass));
@@ -374,7 +390,7 @@ function serve() {
     delay: 100
   }, series(writeJsRequiresFile, buildJs, reload));
 
-  // Изображения блоков
+  // Картинки: все события
   watch([`${dir.blocks}**/img/*.{jpg,jpeg,png,gif,svg,webp}`], {events: ['all'], delay: 100}, series(copyImg, reload));
 
   // Слежение за спрайтами
@@ -445,7 +461,7 @@ function getClassesToBlocksList(file, enc, cb) {
       // Если этот класс совпадает с классом-исключением из настроек, не будем добавлять
       if (nth.config.ignoredBlocks.indexOf(item) + 1) continue;
       // У этого блока отсутствует папка?
-      if (!fileExist(dir.blocks + item)) continue;
+      // if (!fileExist(dir.blocks + item)) continue;
       // Добавляем
       nth.blocksFromHtml.push(item);
     }
