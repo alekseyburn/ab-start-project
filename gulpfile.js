@@ -83,7 +83,12 @@ exports.writePugMixinsFile = writePugMixinsFile;
 
 function compilePug() {
   return src([`${dir.src}pages/**/*.pug`])
-    .pipe(plumber())
+    .pipe(plumber({
+      errorHandler: function (err) {
+        console.log(err.message);
+        this.emit('end');
+      }
+    }))
     .pipe(debug({title: 'Compiles '}))
     .pipe(pug(pugOption))
     .pipe(prettyHtml(prettyOption))
@@ -96,7 +101,12 @@ exports.compilePug = compilePug;
 // Компиляция только изменившегося (с последнего запуска задачи) pug-файла
 function compilePugFast() {
   return src([`${dir.src}pages/**/*.pug`], {since: lastRun(compilePugFast)})
-    .pipe(plumber())
+    .pipe(plumber({
+      errorHandler: function (err) {
+        console.log(err.message);
+        this.emit('end');
+      }
+    }))
     .pipe(debug({title: 'Compiles '}))
     .pipe(pug(pugOption))
     .pipe(prettyHtml(prettyOption))
@@ -195,7 +205,7 @@ function writeSassImportsFile(cb) {
     newScssImportsList.push(src);
   });
   let allBlocksWithScssFiles = getDirectories('scss');
-  allBlocksWithScssFiles.forEach(function(blockWithScssFile){
+  allBlocksWithScssFiles.forEach(function (blockWithScssFile) {
     if (nth.blocksFromHtml.indexOf(blockWithScssFile) === -1) return;
     newScssImportsList.push(`${dir.blocks}${blockWithScssFile}/${blockWithScssFile}.scss`);
   });
@@ -237,9 +247,10 @@ function writeJsRequiresFile(cb) {
   nth.config.addJsBefore.forEach((src) => {
     jsRequires += `require('${src}');\n`;
   });
-  let allBlocksWithJsFiles = getDirectories('js');
-  allBlocksWithJsFiles.forEach(function(blockWithJsFile){
-    if (nth.blocksFromHtml.indexOf(blockWithJsFile) === -1) return;
+  const allBlocksWithJsFiles = getDirectories('js');
+  const allUsedBlocks = nth.blocksFromHtml.concat(nth.config.alwaysAddBlocks);
+  allBlocksWithJsFiles.forEach(function (blockWithJsFile) {
+    if (allUsedBlocks.indexOf(blockWithJsFile) === -1) return;
     jsRequires += `require('../blocks/${blockWithJsFile}/${blockWithJsFile}.js');\n`;
   });
   nth.config.addJsAfter.forEach((src) => {
@@ -247,6 +258,7 @@ function writeJsRequiresFile(cb) {
   });
   jsRequires += msg;
   fs.writeFileSync(`${dir.src}js/entry.js`, jsRequires);
+  console.log('---------- Write new entry.js');
   cb();
 }
 
@@ -311,13 +323,6 @@ function serve() {
     notify: false
   });
 
-  // Конфигурационный файл
-  watch([`config.js`], { events: ['change'], delay: 100 }, series(
-    parallel(writeSassImportsFile, writeJsRequiresFile),
-    parallel(compileSass, buildJs),
-    reload
-  ));
-
   // Страницы: изменение, добавление
   watch([`${dir.src}pages/**/*.pug`], {
     events: ['change', 'add'],
@@ -344,13 +349,13 @@ function serve() {
     });
 
   // Разметка Блоков: изменение
-  watch([`${dir.blocks}**/*.pug`], { events: ['change'], delay: 100 }, series(
+  watch([`${dir.blocks}**/*.pug`], {events: ['change'], delay: 100}, series(
     compilePug,
     reload
   ));
 
   // Разметка Блоков: добавление
-  watch([`${dir.blocks}**/*.pug`], { events: ['add'], delay: 100 }, series(
+  watch([`${dir.blocks}**/*.pug`], {events: ['add'], delay: 100}, series(
     writePugMixinsFile,
     compilePug,
     reload
@@ -370,12 +375,12 @@ function serve() {
   ));
 
   // Стили Блоков: изменение
-  watch([`${dir.blocks}**/*.scss`], { events: ['change'], delay: 100 }, series(
+  watch([`${dir.blocks}**/*.scss`], {events: ['change'], delay: 100}, series(
     compileSass,
   ));
 
   // Стили Блоков: добавление
-  watch([`${dir.blocks}**/*.scss`], { events: ['add'], delay: 100 }, series(
+  watch([`${dir.blocks}**/*.scss`], {events: ['add'], delay: 100}, series(
     writeSassImportsFile,
     compileSass,
   ));
@@ -464,7 +469,7 @@ function getClassesToBlocksList(file, enc, cb) {
       // Добавляем
       nth.blocksFromHtml.push(item);
     }
-    console.log('---------- Used blocks:   ' + nth.blocksFromHtml.join(', '));
+    console.log('---------- Used HTML blocks:   ' + nth.blocksFromHtml.join(', '));
     file.contents = Buffer.from(fileContent);
   }
   this.push(file);
