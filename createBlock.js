@@ -2,9 +2,10 @@
 
 // Использование: node createBlock.js [имя блока] [доп. расширения через пробел]
 
-const fs = require('fs'); // Для работы с файловой системой
-const projectConfig = require('./projectConfig.json'); // Чтобы получать настройки из package.json
-const dirs = projectConfig.dirs; // Объект с директориями
+const fs = require('fs');
+const projectConfig = require('./config.js');
+
+const dir = projectConfig.dir; // Объект с директориями
 const mkdirp = require('mkdirp'); // Зависимость - создание папки
 
 /*
@@ -15,14 +16,12 @@ process.argv[n]
 В нашем случае [2] - имя блока, [3-...] - имена расширений
  */
 const blockName = process.argv[2];
-const defaultExtensions = ['scss', 'pug', 'md', 'img']; //расширения по умолчанию
-
+const defaultExtensions = ['scss', 'img']; //расширения по умолчанию
 //добавляем к массиву defaultExtensions additional extensions, заданные при вводе run node createBlock, затем удаляем дубликаты
 const extensions = uniqueArray(defaultExtensions.concat(process.argv.slice(3)));
 
 if (blockName) {
-
-  const dirPath = `${dirs.srcPath + dirs.blocksDirName}/${blockName}/`;
+  const dirPath = `${dir.blocks + blockName}/`;
   mkdirp(dirPath).then(() => {
     console.log(`[NTH] Создание папки ${dirPath} (создана, если ещё не существует)`);
 
@@ -31,26 +30,14 @@ if (blockName) {
       let fileContent = '';
       let fileCreateMsg = '';
       if (extension === 'scss') {
-        fileContent = `// В этом файле должны быть стили для БЭМ-блока ${blockName}, его элементов,\n// модификаторов, псевдоселекторов, псевдоэлементов, @media-условий...\n// Очередность: http://nicothin.github.io/idiomatic-pre-CSS/#priority\n\n.${blockName} {\n\n  $block-name:                &; // #{$block-name}__element\n}\n`;      }
-
-      else if (extension === 'html') {
-        fileContent = `<div class="${blockName}">content</div>\n`;
-      }
-
-      else if (extension === 'js') {
+        fileContent = `// В этом файле должны быть стили для БЭМ-блока ${blockName}, его элементов,\n// модификаторов, псевдоселекторов, псевдоэлементов, @media-условий...\n// Очередность: http://nicothin.github.io/idiomatic-pre-CSS/#priority\n\n.${blockName} {\n\n  $block-name:                &; // #{$block-name}__element\n}\n`;
+      } else if (extension === 'js') {
         fileContent = '// (function(){\n// код\n// }());\n';
-      }
-
-      else if (extension === 'md') {
+      } else if (extension === 'md') {
         fileContent = '';
-      }
-
-      else if (extension === 'pug') {
-        fileContent = `//- Все примеси в этом файле должны начинаться c имени блока (${blockName})\n\nmixin ${blockName}(text, mods)\n\n  //- Принимает:\n  //-   text    {string} - текст\n  //-   mods    {string} - список модификаторов\n  //- Вызов:\n        +${blockName}('Текст', 'some-mod')\n\n  -\n    // список модификаторов\n    var allMods = '';\n    if(typeof(mods) !== 'undefined' && mods) {\n      var modsList = mods.split(',');\n      for (var i = 0; i < modsList.length; i++) {\n        allMods = allMods + ' ${blockName}--' + modsList[i].trim();\n      }\n    }\n\n  .${blockName}(class=allMods)&attributes(attributes)\n    .${blockName}__inner!= text\n`;
-      }
-
-      // Если нужна подпапка для картинок
-      else if (extension === 'img') {
+      } else if (extension === 'pug') {
+        fileContent = `//- Все примеси в этом файле должны начинаться c имени блока (${blockName})\n\nmixin ${blockName}(text, mods)\n\n  //- Принимает:\n  //-   text    {string} - текст\n  //-   mods    {string} - список модификаторов\n  //- Вызов:\n        +${blockName}('Текст', 'some-mod')\n\n  -\n    // список модификаторов\n    var allMods = '';\n    if(typeof(mods) !== 'undefined' && mods) {\n      var modsList = mods.split(',');\n      for (var i = 0; i < modsList.length; i++) {\n        allMods = allMods + ' ${blockName}--' + modsList[i].trim();\n      }\n    }\n\n  .${blockName}(class=allMods)&attributes(attributes)\n    .${blockName}__inner!= text\n      block\n`;
+      } else if (extension === 'img') {
         const imgFolder = `${dirPath}img/`;
         if (fileExist(imgFolder) === false) {
           mkdirp(imgFolder).then(() => {
@@ -83,32 +70,15 @@ if (blockName) {
         });
       }
     });
-
-    // Добавим созданный файл
-    let hasThisBlock = false;
-    for (const block in projectConfig.blocks) {
-      if (block === blockName) {
-        hasThisBlock = true;
-        break;
-      }
-    }
-    if (!hasThisBlock) {
-      projectConfig.blocks[blockName] = [];
-      const newPackageJson = JSON.stringify(projectConfig, '', 2);
-      fs.writeFileSync('./projectConfig.json', newPackageJson);
-      console.log('[NTH] Подключение блока добавлено в projectConfig.json');
-    }
   });
 } else {
   console.log(`[NTH] Отмена операции: не указан блок`);
 }
 
-// Оставить в массиве только уникальные значения (убрать повторы)
 function uniqueArray(arr) {
   return Array.from(new Set(arr));
 }
 
-// Проверка существования файла
 function fileExist(path) {
   try {
     fs.statSync(path);

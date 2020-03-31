@@ -1,14 +1,6 @@
 # svg спрайт
 
-Из файлов папки `sprite-svg/svg/` будет сгенерирован файл спрайта `sprite-svg/img/sprite.svg`, который будет скопирован в папку сборки. Стилевой файл блока не используется. SVG-файлы будут оптимизированы перед сборкой в спрайт. Сам спрайт имеет вид:
-
-```html
-<svg xmlns="http://www.w3.org/2000/svg">
-    <symbol id="icon-boo" viewBox="0 0 30 30"><path d="..."/></symbol>
-    <symbol id="icon-bs" viewBox="0 0 28 28"><path d="..."/></symbol>
-   ...
-</svg>
-```
+Из файлов `sprite-svg/svg/` генерируется файл спрайта `sprite-svg/img/sprite.svg`.
 
 Для вставки на страницу используйте `svg > use` со ссылками на `id` символа:
 

@@ -24,7 +24,6 @@ const atImport = require('postcss-import'); //импорт .css файлов п�
 const cssnano = require('cssnano'); //минификация css
 const inlineSVG = require('postcss-inline-svg'); //инлайн svg файлов с параметрами из css
 const objectFitImages = require('postcss-object-fit-images'); //полифилит свойство object-fit
-const browserify = require('browserify');
 const source = require('vinyl-source-stream');
 const buffer = require('vinyl-buffer');
 const uglify = require('gulp-uglify');
@@ -34,33 +33,24 @@ const pngquant = require('imagemin-pngquant');  //сжатие png
 const svgstore = require('gulp-svgstore');  //создание svg спрайта
 const spritesmith = require('gulp.spritesmith');  //создание png спрайта
 const merge = require('merge-stream'); //объединяет потоки
+const ghPages = require('gh-pages');  //запускает деплой в ветку gh-pages
+const path = require('path');
+const webpackStream = require('webpack-stream');
 
-// Настройки из файла
-let config = require('./config.js');
-
-// Директории из настроек (dir.src = './src/', dir.build = './build/')
-let dir = config.dir;
-
-// dir.blocks = `${dir.src}blocks/`;
-
-// Список блоков, который будет получен из классов html после компиляции pug
-let blocksList = [];
-
-// Старый список блоков в виде строки
-let oldBlocksListString = JSON.stringify(config.blocks);
-
-// Адрес репозитория
-let repoUrl = require('./package.json').repository.url.replace(/\.git$/g, '');
-
-// Определение: разработка это или финальная сборка
+// Глобальные настройки запуска
 const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'dev';
+const nth = {};
+nth.config = require('./config.js');
+nth.blocksFromHtml = []; // Блоки из html (только если имеют свою папку блока)
+nth.scssImportsList = []; // Список импортов стилей
+const dir = nth.config.dir;
 
 // Сообщение для компилируемых файлов
 let doNotEditMsg = '\n ВНИМАНИЕ! Этот файл генерируется автоматически.\n Любые изменения этого файла будут потеряны при следующей компиляции.\n Любое изменение проекта без возможности компиляции ДОЛЬШЕ И ДОРОЖЕ в 2-3 раза.\n\n';
 
 // Настройки pug-компилятора
 let pugOption = {
-  data: {repoUrl: repoUrl},
+  data: {repoUrl: 'https://github.com/alekseyburn/ab-start-project'},
   filters: {'show-code': filterShowCode}
 };
 
@@ -80,8 +70,21 @@ let postCssPlugins = [
   }),
   atImport(),
   inlineSVG(),
-  objectFitImages()
+  objectFitImages(),
+  cssnano()
 ];
+
+function writePugMixinsFile(cb) {
+  let allBlocksWithPugFiles = getDirectories('pug');
+  let pugMixins = `//-${doNotEditMsg.replace(/\n /gm, '\n ')}`;
+  allBlocksWithPugFiles.forEach(function (blockName) {
+    pugMixins += `include ${dir.blocks.replace(dir.src, '../')}${blockName}/${blockName}.pug\n`;
+  });
+  fs.writeFileSync(`${dir.src}pug/mixins.pug`, pugMixins);
+  cb();
+}
+
+exports.writePugMixinsFile = writePugMixinsFile;
 
 function compilePug() {
   return src([`${dir.src}pages/**/*.pug`])
@@ -90,9 +93,6 @@ function compilePug() {
     .pipe(pug(pugOption))
     .pipe(prettyHtml(prettyOption))
     .pipe(through2.obj(getClassesToBlocksList))
-    .on('end', function () {
-      checkBlockList(true) // Компилируются все; можно убирать блоки, которых больше нет
-    })
     .pipe(dest(dir.build));
 }
 
@@ -106,98 +106,15 @@ function compilePugFast() {
     .pipe(pug(pugOption))
     .pipe(prettyHtml(prettyOption))
     .pipe(through2.obj(getClassesToBlocksList))
-    .on('end', checkBlockList)
     .pipe(dest(dir.build));
 }
 
 exports.compilePugFast = compilePugFast;
 
-function writePugMixinsFile(cb) {
-  const regExp = dir.blocks.replace('./', '');
-  let allBlocksWithPugFiles = getDirectories(dir.blocks, 'pug');
-  console.log(allBlocksWithPugFiles);
-  let pugMixins = doNotEditMsg.replace(/\n /gm, '\n//- ');
-  allBlocksWithPugFiles.forEach(function (blockName) {
-    pugMixins += `include ${dir.blocks.replace(dir.src, '../')}${blockName}/${blockName}.pug\n`;
-  });
-  fs.writeFileSync(`${dir.src}pug/mixins.pug`, pugMixins);
-  cb();
-}
-
-exports.writePugMixinsFile = writePugMixinsFile;
-
-function compileSass() {
-  return src(`${dir.src}sass/style.scss`, {sourcemaps: true})
-    .pipe(plumber())
-    .pipe(debug({title: 'Compiles:'}))
-    .pipe(sass({includePaths: [__dirname + '/']}))
-    .pipe(postcss(postCssPlugins))
-    .pipe(gulpIf(!isDev, postcss([cssnano()])))
-    .pipe(dest(`${dir.build}/css`, {sourcemaps: '.'}))
-    .pipe(browserSync.stream());
-}
-
-exports.compileSass = compileSass;
-
-function writeSassImportsFile(cb) {
-  let msg = `\n/* !*${doNotEditMsg.replace(/\n /gm, '\n * ').replace(/\n\n$/, '\n */\n')}`;
-  let styleImports = msg;
-  config.addStyleBefore.forEach(function (src) {
-    styleImports += `@import "${src}";\n`;
-  });
-  config.blocks.forEach((block) => {
-    let src = `${dir.blocks}${block}/${block}.scss`;
-    if (fileExist(src)) styleImports += `@import "${src}";\n`;
-  });
-  config.addStyleAfter.forEach((src) => {
-    styleImports += `@import "${src}";\n`;
-  });
-  styleImports += msg;
-  fs.writeFileSync(`${dir.src}sass/style.scss`, styleImports);
-  cb();
-}
-
-exports.writeSassImportsFile = writeSassImportsFile;
-
-function buildJs() {
-  return browserify({
-    entries: dir.src + '/js/entry.js',
-    debug: true
-  })
-    .transform('babelify', {presets: ['@babel/preset-env']})
-    .bundle()
-    .pipe(source('bundle.js'))
-    .pipe(buffer())
-    .pipe(gulpIf(!isDev, uglify()))
-    .pipe(dest(dir.build + '/js'));
-}
-
-exports.buildJs = buildJs;
-
-function writeJsRequiresFile(cb) {
-  let msg = `\n/*!*${doNotEditMsg.replace(/\n /gm, '\n * ').replace(/\n\n$/, '\n */\n\n')}`;
-  let jsRequires = msg;
-  config.addJsBefore.forEach((src) => {
-    jsRequires += `require('${src}');\n`;
-  });
-  config.blocks.forEach((block) => {
-    if (fileExist(`${dir.blocks}${block}/${block}.js`)) jsRequires += `require('../blocks/${block}/${block}.js');\n`;
-  });
-  config.addJsAfter.forEach((src) => {
-    jsRequires += `require('${src}');\n`;
-  });
-  jsRequires += msg;
-  fs.writeFileSync(`${dir.src}js/entry.js`, jsRequires);
-  cb();
-}
-
-exports.writeJsRequiresFile = writeJsRequiresFile;
-
 function copyAssets(cb) {
-  for (let item in config.addAssets) {
-    let dest = `${dir.build}${config.addAssets[item]}`;
+  for (let item in nth.config.addAssets) {
+    let dest = `${dir.build}${nth.config.addAssets[item]}`;
     cpy(item, dest);
-    console.log(`---------- Скопировано: ${item} -> ${dest}`);
   }
   cb();
 }
@@ -206,13 +123,16 @@ exports.copyAssets = copyAssets;
 
 function copyImg(cb) {
   let copiedImages = [];
-  config.blocks.forEach((block) => {
+  nth.blocksFromHtml.forEach((block) => {
+    let src = `${dir.blocks}${block}/img`;
+    if (fileExist(src)) copiedImages.push(src);
+  });
+  nth.config.alwaysAddBlocks.forEach((block) => {
     let src = `${dir.blocks}${block}/img`;
     if (fileExist(src)) copiedImages.push(src);
   });
   (async () => {
     await cpy(copiedImages, `${dir.build}img`);
-    console.log(`---------- Скопированы изображения БЭМ-блоков`);
     cb();
   })();
 }
@@ -221,7 +141,7 @@ exports.copyImg = copyImg;
 
 function generateSvgSprite(cb) {
   let spriteSvgPath = `${dir.blocks}sprite-svg/svg/`;
-  if (config.blocks.indexOf('sprite-svg') + 1 && fileExist(spriteSvgPath)) {
+  if (nth.config.alwaysAddBlocks.indexOf('sprite-svg') > -1 && fileExist(spriteSvgPath)) {
     return src(spriteSvgPath + '*.svg')
       .pipe(imagemin([
         imagemin.svgo({
@@ -244,7 +164,7 @@ exports.generateSvgSprite = generateSvgSprite;
 
 function generatePngSprite(cb) {
   let spritePngPath = `${dir.blocks}sprite-png/png/`;
-  if (config.blocks.indexOf('sprite-png') + 1 && fileExist(spritePngPath)) {
+  if (nth.config.alwaysAddBlocks.indexOf('sprite-png') > -1 && fileExist(spritePngPath)) {
     del(`${dir.blocks}sprite-png/img/*.png`);
     let fileName = 'sprite-' + Math.random().toString().replace(/[^0-9]/g, '') + '.png';
     let spriteData = src(spritePngPath + '*.png')
@@ -274,8 +194,101 @@ function generatePngSprite(cb) {
 
 exports.generatePngSprite = generatePngSprite;
 
+function writeSassImportsFile(cb) {
+  const newScssImportsList = [];
+  nth.config.addStyleBefore.forEach((src) => {
+    newScssImportsList.push(src);
+  });
+  nth.blocksFromHtml.forEach((block) => {
+    let src = `${dir.blocks}${block}/${block}.scss`;
+    if (fileExist(src)) newScssImportsList.push(src);
+  });
+  nth.config.addStyleAfter.forEach((src) => {
+    newScssImportsList.push(src);
+  });
+  let diff = getArraysDiff(newScssImportsList, nth.scssImportsList);
+  if (diff.length) {
+    let msg = `\n/* !*${doNotEditMsg.replace(/\n /gm, '\n * ').replace(/\n\n$/, '\n */\n\n')}`;
+    let styleImports = msg;
+    newScssImportsList.forEach((src) => {
+      styleImports += `@import "${src}";\n`;
+    });
+    styleImports += msg;
+    fs.writeFileSync(`${dir.src}sass/style.scss`, styleImports);
+    console.log('---------- Write new style.scss');
+    nth.scssImportsList = newScssImportsList;
+  }
+  cb();
+}
+
+exports.writeSassImportsFile = writeSassImportsFile;
+
+function compileSass() {
+  return src(`${dir.src}sass/style.scss`, {sourcemaps: true})
+    .pipe(plumber())
+    .pipe(debug({title: 'Compiles:'}))
+    .pipe(sass({includePaths: [__dirname + '/']}))
+    .pipe(postcss(postCssPlugins))
+    .pipe(dest(`${dir.build}/css`, {sourcemaps: '.'}))
+    .pipe(browserSync.stream());
+}
+
+exports.compileSass = compileSass;
+
+function writeJsRequiresFile(cb) {
+  let msg = `\n/*!*${doNotEditMsg.replace(/\n /gm, '\n * ').replace(/\n\n$/, '\n */\n\n')}`;
+  let jsRequires = msg;
+  nth.config.addJsBefore.forEach((src) => {
+    jsRequires += `require('${src}');\n`;
+  });
+  nth.blocksFromHtml.forEach((block) => {
+    if (fileExist(`${dir.blocks}${block}/${block}.js`)) jsRequires += `require('../blocks/${block}/${block}.js');\n`;
+  });
+  nth.config.addJsAfter.forEach((src) => {
+    jsRequires += `require('${src}');\n`;
+  });
+  jsRequires += msg;
+  fs.writeFileSync(`${dir.src}js/entry.js`, jsRequires);
+  cb();
+}
+
+exports.writeJsRequiresFile = writeJsRequiresFile;
+
+function buildJs() {
+  return src(`${dir.src}js/entry.js`)
+    .pipe(plumber())
+    .pipe(webpackStream({
+      mode: 'development',
+      entry: {
+        'bundle': `./${dir.src}js/entry.js`,
+      },
+      output: {
+        filename: '[name].js',
+      },
+      module: {
+        rules: [
+          {
+            test: /\.(js)$/,
+            exclude: /(node_modules)/,
+            loader: 'babel-loader',
+            query: {
+              presets: ['@babel/preset-env']
+            }
+          }
+        ]
+      },
+      // externals: {
+      //  jquery: 'jQuery'
+      // }
+    }))
+    .pipe(uglify())
+    .pipe(dest(`${dir.build}js`));
+}
+
+exports.buildJs = buildJs;
+
 function clearBuildDir() {
-  return del(`${dir.build}**/*`)
+  return del(`${dir.build}**/*`);
 }
 
 exports.clearBuildDir = clearBuildDir;
@@ -284,6 +297,12 @@ function reload(done) {
   browserSync.reload();
   done();
 }
+
+function deploy(cb) {
+  ghPages.publish(path.join(process.cwd(), dir.build), cb);
+}
+
+exports.deploy = deploy;
 
 function serve() {
   browserSync.init({
@@ -312,14 +331,14 @@ function serve() {
       // console.log(`dir.src.replace('./', '') + 'pages/': ${dir.src.replace('./', '') + 'pages/'}`);
       // console.log(`path.replace(dir.src.replace('./', '') + 'pages/', dir.build): ${path.replace(`${dir.src.replace('./', '')}pages\\`, dir.build)}`);
       // console.log(`path.replace(dir.src.replace('./', '') + 'pages/', dir.build).replace('.pug', '.html'): ${path.replace(dir.src.replace('./', '') + 'pages/', dir.build).replace('.pug', '.html')}`);
-      let filePathInBuildDir = path.replace('src\\pages\\', dir.build).replace('.pug', '.html');
+      let filePathInBuildDir = path.replace(dir.src + 'pages/', dir.build).replace('.pug', '.html');
       fs.unlink(filePathInBuildDir, (err) => {
         if (err) throw err;
-        console.log(`---------- ${filePathInBuildDir} удалён`);
+        console.log(`---------- Delete:  ${filePathInBuildDir}`);
       });
     });
 
-  // Файлы разметки БЭМ-блоков (изменение, добавление)
+  // Файлы разметки блоков (изменение, добавление)
   watch([`${dir.blocks}**/*.pug`], {
     events: ['change', 'add'],
     delay: 100
@@ -330,8 +349,8 @@ function serve() {
     reload
   ));
 
-  // Файлы разметки БЭМ-блоков (удаление)
-  watch([`${dir.blocks}**/*.pug`], {events: ['unlink'], delay: 100}, series(writePugMixinsFile));
+  // Файлы разметки блоков (удаление)
+  watch([`${dir.blocks}**/*.pug`], {events: ['unlink'], delay: 100}, writePugMixinsFile);
 
   // Шаблонные pug-файлы, кроме файла примесей (все события)
   watch([`${dir.src}pug/**/*.pug`, `!${dir.src}pug/mixins.pug`], {
@@ -343,7 +362,7 @@ function serve() {
     reload
   ));
 
-  // Стилевые файлы БЭМ-блоков (любые события)
+  // Стилевые файлы блоков (любые события)
   watch([`${dir.blocks}**/*.scss`], {events: ['all'], delay: 100}, series(writeSassImportsFile, compileSass));
 
   // Глобальные стилевые файлы, кроме файла с импортами (любые события)
@@ -355,47 +374,86 @@ function serve() {
     delay: 100
   }, series(writeJsRequiresFile, buildJs, reload));
 
-  // Изображения БЭМ-блоков
+  // Изображения блоков
   watch([`${dir.blocks}**/img/*.{jpg,jpeg,png,gif,svg,webp}`], {events: ['all'], delay: 100}, series(copyImg, reload));
 
   // Слежение за спрайтами
   watch([`${dir.blocks}sprite-svg/svg/*.svg`], {
     events: ['all'],
     delay: 100
-  }, series(generateSvgSprite, copyImg));
+  }, series(
+    generateSvgSprite,
+    copyImg,
+    reload
+  ));
   watch([`${dir.blocks}sprite-png/png/*.png`], {
     events: ['all'],
     delay: 100
-  }, series(generatePngSprite, copyImg, compileSass));
+  }, series(
+    generatePngSprite,
+    copyImg,
+    compileSass,
+    reload
+  ));
 }
+
+exports.build = series(
+  parallel(clearBuildDir, writePugMixinsFile),
+  parallel(compilePugFast, copyAssets, generateSvgSprite, generatePngSprite),
+  parallel(copyImg, writeSassImportsFile, writeJsRequiresFile),
+  parallel(compileSass, buildJs),
+);
 
 exports.default = series(
   parallel(clearBuildDir, writePugMixinsFile),
-  parallel(compilePugFast, copyAssets),
-  parallel(generateSvgSprite, generatePngSprite),
-  copyImg,
-  parallel(writeSassImportsFile, writeJsRequiresFile),
+  parallel(compilePugFast, copyAssets, generateSvgSprite, generatePngSprite),
+  parallel(copyImg, writeSassImportsFile, writeJsRequiresFile),
   parallel(compileSass, buildJs),
-  serve
+  serve,
 );
-
 
 // Функции, не являющиеся задачами Gulp --------------------
 
 /**
- * Запись конфигурационного файла
- * @param  {object} config Конфиг
+ * Получение списка классов из HTML и запись его в глоб. переменную nth.blocksFromHtml.
+ * @param  {object}   file Обрабатываемый файл
+ * @param  {string}   enc  Кодировка
+ * @param  {Function} cb   Коллбэк
  */
-function writeConfig(config) {
-  let settings = {
-    type: 'space',
-    size: 2
-  };
-  let configText = '// Файл перезаписывается программно при работе автоматизации\nlet config =\n' + jsonFormat(config, settings) + ';\n\nmodule.exports = config;\n';
-  fs.writeFile('./config.js', configText, function (err) {
-    if (err) throw err;
-    console.log('---------- Записан новый config.js');
-  })
+
+function getClassesToBlocksList(file, enc, cb) {
+  // Если файл не существует
+  if (file.isNull()) {
+    cb(null, file);
+    return;
+  }
+  // Проверка, не является ли обрабатываемый файл исключением
+  let processThisFile = true;
+  nth.config.notGetBlocks.forEach((item) => {
+    console.log(`file.relative: ${file.relative}\nitem: ${item}`);
+    if (file.relative.trim() === item.trim()) processThisFile = false;
+  });
+  // Файл не исключён, следующие действия
+  if (processThisFile) {
+    const fileContent = file.contents.toString();
+    let classesInFile = getClassesFromHtml(fileContent);
+    nth.blocksFromHtml = [];
+    // Обход всех найденных классов
+    for (let item of classesInFile) {
+      // Если это не блок или этот блок уже есть, пропуск
+      if ((item.indexOf('__') > -1) || (item.indexOf('--') > -1) || (nth.blocksFromHtml.indexOf(item) + 1)) continue;
+      // Если этот класс совпадает с классом-исключением из настроек, не будем добавлять
+      if (nth.config.ignoredBlocks.indexOf(item) + 1) continue;
+      // У этого блока отсутствует папка?
+      if (!fileExist(dir.blocks + item)) continue;
+      // Добавляем
+      nth.blocksFromHtml.push(item);
+    }
+    console.log('---------- Used blocks:   ' + nth.blocksFromHtml.join(', '));
+    file.contents = Buffer.from(fileContent);
+  }
+  this.push(file);
+  cb();
 }
 
 /**
@@ -430,11 +488,11 @@ function fileExist(path) {
 
 /**
  * Получение всех названий поддиректорий, содержащих файл указанного расширения, совпадающий по имени с поддиректорией
- * @param  {string} source Путь к папке всех блоков.
  * @param  {string} ext    Расширение файлов, которое проверяется
  * @return {array}         Массив из имён блоков
  */
-function getDirectories(source, ext) {
+function getDirectories(ext) {
+  let source = dir.blocks;
   console.log(`source: ${source}`);
   return fs.readdirSync(source)
     .filter(item => fs.lstatSync(source + item).isDirectory())
@@ -458,75 +516,4 @@ function getArraysDiff(a1, a2) {
  */
 function uniqueArray(arr) {
   return Array.from(new Set(arr));
-}
-
-/**
- * Добавление списка классов из принятого HTML в глобальную переменную blocksList, используется в потоке обработки Pug.
- * @param  {object}   file Обрабатываемый файл
- * @param  {string}   enc  Кодировка
- * @param  {Function} cb   Коллбэк
- */
-
-function getClassesToBlocksList(file, enc, cb) {
-  // Если файл не существует
-  if (file.isNull()) {
-    cb(null, file);
-    return;
-  }
-  // Проверка, не является ли обрабатываемый файл исключением
-  let processThisFile = true;
-  config.notGetBlocks.forEach((item) => {
-    console.log(`file.relative: ${file.relative}\nitem: ${item}`);
-    if (file.relative.trim() === item.trim()) processThisFile = false;
-  });
-  // Файл не исключён, следующие действия
-  if (processThisFile) {
-    const fileContent = file.contents.toString();
-    let classesInFile = getClassesFromHtml(fileContent);
-    // Обход всех найденных классов
-    for (let item of classesInFile) {
-      // Если это не блок или этот блок уже есть, пропуск
-      if ((item.indexOf('__') + 1 !== 0) || (item.indexOf('--') + 1 !== 0) || (blocksList.indexOf(item) + 1)) continue;
-      // Если этот класс совпадает с классом-исключением из настроек, не будем добавлять
-      if (config.ignoredBlocks.indexOf(item) + 1) continue;
-      // Добавляем
-      blocksList.push(item);
-    }
-    // Добавим все обязательные блоки из настроек
-    config.alwaysAddBlocks.forEach((item) => {
-      blocksList.push(item);
-    });
-    file.contents = Buffer.from(fileContent);
-  }
-  this.push(file);
-  cb();
-}
-
-/**
- * Обновление глобальной переменной с актуальным списком блоков
- * @param  {Boolean} removeBlocks Удалять ли не найденные блоки
- */
-function checkBlockList(removeBlocks = false) {
-  if (blocksList.length) {
-    if (removeBlocks) {
-      // Убрать из списка блоков те элементы, которых нет в списке блоков, полученном из HTML
-      config.blocks = config.blocks.filter(item => blocksList.indexOf(item) >= 0);
-      console.log(`убрали из конфига блоки, которых нет в html: ${config.blocks}`);
-    }
-    // Добавить в конец списка блоков те элементы, которые использованы в HTML, но отсутствуют в списке
-    // Array.prototype.push.apply(config.blocks, getArraysDiff(blocksList, config.blocks));
-    config.blocks = config.blocks.concat(getArraysDiff(blocksList, config.blocks));
-    config.blocks = uniqueArray(config.blocks);
-    // ИМЕЕМ СПИСОК ИСПОЛЬЗОВАННЫХ СЕЙЧАС НА ПРОЕКТЕ БЛОКОВ
-    console.log(`добавили блоки, которые есть в html, но нет в списке: ${config.blocks}`);
-    // Если есть изменения списка блоков
-    if (oldBlocksListString !== JSON.stringify(config.blocks)) {
-      // Записать новый конфиг
-      writeConfig(config);
-      // Подновить старый список блоков
-      oldBlocksListString = JSON.stringify(config.blocks);
-    }
-  } else {
-    console.log('---------- В проекте нет блоков. Сурово. По-челябински.');
-  }
 }
