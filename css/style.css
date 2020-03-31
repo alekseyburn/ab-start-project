@@ -1,0 +1,12 @@
+@charset "UTF-8";
+/* !*
+ * ВНИМАНИЕ! Этот файл генерируется автоматически.
+ * Любые изменения этого файла будут потеряны при следующей компиляции.
+ * Любое изменение проекта без возможности компиляции ДОЛЬШЕ И ДОРОЖЕ в 2-3 раза.
+ */@font-face{font-weight:400;font-family:Sample;font-style:normal;font-display:swap;src:url(../fonts/Sample.woff2) format("woff2"),url(../fonts/Sample.woff) format("woff")}@font-face{font-weight:700;font-family:Sample;font-style:normal;font-display:swap;src:url(../fonts/Sample.woff2) format("woff2"),url(../fonts/Sample.woff) format("woff")}*,:after,:before{box-sizing:inherit}html{box-sizing:border-box}a{text-decoration:none}img{width:100%;height:auto}input[type=search]{-webkit-appearance:textfield}[role=button],a,button,input,label,select,textarea{touch-action:manipulation}a svg,button svg{pointer-events:none}svg:not(:root){overflow:hidden}body{min-width:320px;margin:0 auto;font-weight:400;font-size:10px;line-height:150%;font-family:Sample,-apple-system,blinkmacsystemfont,Roboto,Ubuntu,Droid Sans,Helvetica Neue,Arial,sans-serif;color:#8e80a9;background-color:#fcf8fe;background-repeat:no-repeat;background-size:contain}
+/* !*
+ * ВНИМАНИЕ! Этот файл генерируется автоматически.
+ * Любые изменения этого файла будут потеряны при следующей компиляции.
+ * Любое изменение проекта без возможности компиляции ДОЛЬШЕ И ДОРОЖЕ в 2-3 раза.
+ */
+/*# sourceMappingURL=style.css.map */
