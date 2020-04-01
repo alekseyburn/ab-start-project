@@ -43,6 +43,8 @@ const merge = require('merge-stream'); //объединяет потоки
 const ghPages = require('gh-pages');  //запускает деплой в ветку gh-pages
 const path = require('path');
 const webpackStream = require('webpack-stream');
+const webp = require('gulp-webp');
+const critical = require('critical').stream;
 
 // Глобальные настройки запуска
 const nth = {};
@@ -188,6 +190,65 @@ function generateSvgSprite(cb) {
 
 exports.generateSvgSprite = generateSvgSprite;
 
+function optimizeImages() {
+  let img = src(`${dir.src}img/*.{png,svg,jpg,jpeg}`, {since: lastRun(optimizeImages)})
+    .pipe(buffer())
+    .pipe(imagemin([
+      imagemin.svgo({
+        plugins: [{
+          removeViewBox: false
+        }]
+      }),
+      imagemin.mozjpeg({quality: 80}),
+      pngquant({
+        quality: [0.6, 0.8],
+        floyd: 1,
+        speed: 1
+      })
+    ]))
+    .pipe(dest(`${dir.src}img/`));
+  let imgWebp = src(`${dir.src}img/*.{png,jpg,jpeg}`, {since: lastRun(optimizeImages)})
+    .pipe(buffer())
+    .pipe(webp({
+      quality: 80
+    }))
+    .pipe(dest(`${dir.src}img/`));
+  return merge(img, imgWebp);
+}
+
+exports.optimizeImages = optimizeImages;
+
+function criticalCssToHtml() {
+  return src('build/*.html')
+    .pipe(critical({
+      base: 'build/',
+      inline: true,
+      css: [
+        'build/css/style.css',
+      ],
+      dimensions: [
+        {
+          height: 480,
+          width: 320,
+        },
+        {
+          height: 768,
+          width: 1024,
+        },
+        {
+          height: 1080,
+          width: 1440,
+        }],
+      ignore: ['@font-face'],
+    }))
+    .on('error', (err) => {
+      console.error(err.message);
+    })
+    .pipe(dest('build'));
+}
+
+exports.criticalCssToHtml = criticalCssToHtml;
+
 function generatePngSprite(cb) {
   let spritePngPath = `${dir.blocks}sprite-png/png/`;
   if (nth.config.alwaysAddBlocks.indexOf('sprite-png') > -1 && fileExist(spritePngPath)) {
@@ -231,7 +292,7 @@ function writeSassImportsFile(cb) {
     }
   });
   let allBlocksWithScssFiles = getDirectories('scss');
-  allBlocksWithScssFiles.forEach(function (blockWithScssFile) {
+  allBlocksWithScssFiles.forEach((blockWithScssFile) => {
     let url = `${dir.blocks}${blockWithScssFile}/${blockWithScssFile}.scss`;
     if (nth.blocksFromHtml.indexOf(blockWithScssFile) === -1) return;
     if (newScssImportsList.indexOf(url) > -1) return;
