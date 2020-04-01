@@ -10,22 +10,23 @@
   },
   "scripts": {
     "start": "gulp",
+    "test": "npm run test:pug && npm run test:style && npm run test:js",
+    "test:pug": "glob-exec \"src/**/*.pug\" -- \"pug-lint {{files.join(' ')}}\"",
     "test:style": "stylelint \"src/**/*.scss\" --syntax=scss",
-    "test:editorconfig": "editorconfig-cli src/**/*.pug",
-    "test": "npm run test:style && npm run test:editorconfig && npm run build",
-    "img-opt": "cross-env folder=src/img npm start img:opt",
-    "build": "cross-env NODE_ENV=production npm start build",
-    "deploy": "cross-env NODE_ENV=production ./node_modules/.bin/gulp build && cross-env ./node_modules/.bin/gulp deploy",
+    "test:js": "eslint src/blocks/**/*.js src/js/**/*.js",
+    "build": "gulp build",
+    "deploy": "cross-env gulp build && gulp deploy",
     "lint-staged": "lint-staged"
   },
   "lint-staged": {
     "*.scss": "stylelint --syntax=scss",
-    "*.pug": "editorconfig-cli",
-    "*.css": "stylelint"
+    "*.{js,pug,md}": "editorconfig-cli",
+    "*.pug": "pug-lint",
+    "*.js": "eslint"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged && gulp test:pug"
+      "pre-commit": "lint-staged"
     }
   },
   "dependencies": {
@@ -34,48 +35,54 @@
     "svg4everybody": "^2.1.9"
   },
   "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/preset-env": "^7.9.0",
     "@htmlacademy/editorconfig-cli": "^1.0.0",
     "autoprefixer": "^9.7.5",
+    "babel-eslint": "^10.1.0",
+    "babel-loader": "^8.1.0",
     "browser-sync": "^2.26.7",
-    "browserslist": "^4.11.0",
-    "chalk": "^3.0.0",
+    "browserslist": "^4.11.1",
+    "cpy": "^8.1.0",
     "cross-env": "^7.0.2",
     "css-mqpacker": "^7.0.0",
     "cssnano": "^4.1.10",
     "del": "^5.1.0",
+    "eslint": "^6.8.0",
     "get-classes-from-html": "^1.0.1",
     "gh-pages": "^2.2.0",
+    "glob-exec": "^0.1.1",
     "gulp": "^4.0.2",
     "gulp-concat": "^2.6.1",
-    "gulp-html-beautify": "^1.0.1",
-    "gulp-if": "^3.0.0",
+    "gulp-debug": "^4.0.0",
     "gulp-imagemin": "^7.1.0",
-    "gulp-newer": "^1.4.0",
-    "gulp-notify": "^3.2.0",
     "gulp-plumber": "^1.2.1",
     "gulp-postcss": "^8.0.0",
+    "gulp-pretty-html": "^2.0.10",
     "gulp-pug": "^4.0.1",
-    "gulp-pug-lint": "git+https://github.com/nicothin/gulp-pug-lint.git",
     "gulp-rename": "^2.0.0",
+    "gulp-replace": "^1.0.0",
     "gulp-sass": "^4.0.2",
-    "gulp-size": "^3.0.0",
     "gulp-sourcemaps": "^2.6.5",
     "gulp-svgstore": "^7.0.1",
     "gulp-uglify": "^3.0.2",
-    "gulp-wait2": "0.0.5",
     "gulp.spritesmith": "^6.11.0",
     "husky": "^4.2.3",
     "imagemin-pngquant": "^8.0.0",
-    "lint-staged": "^10.0.9",
+    "lint-staged": "^10.1.1",
     "merge-stream": "^2.0.0",
     "mkdirp": "^1.0.3",
+    "path": "^0.12.7",
     "postcss-import": "^12.0.1",
     "postcss-inline-svg": "^4.1.0",
     "postcss-object-fit-images": "^1.1.2",
+    "pug-lint": "^2.6.0",
     "stylelint": "^13.2.1",
     "stylelint-config-standard": "^20.0.0",
     "stylelint-scss": "^3.16.0",
     "through2": "^3.0.1",
-    "vinyl-buffer": "^1.0.1"
+    "vinyl-buffer": "^1.0.1",
+    "webpack": "^4.42.1",
+    "webpack-stream": "^5.2.1"
   }
 }

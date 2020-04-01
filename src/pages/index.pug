@@ -1,0 +1,22 @@
+extends ../pug/layout.pug
+
+block meta
+  title Главная
+  meta(name='description', content='')
+
+//- block append head
+//-   link(rel='stylesheet', href='css/some.css')
+
+block nav
+  p.nothing test
+
+block content
+  h1 Заголовок с каким-то эффектом
+  p Содержимое. #[a(href='blocks-demo.html') Библиотека блоков].
+
+block footer
+    p «Подвал»
+    p Контактный телефон: #[a(href='tel:+70000000000') +7 000 000 00 00]
+
+//- block append page-bottom
+//-   script(src='js/some.js')
