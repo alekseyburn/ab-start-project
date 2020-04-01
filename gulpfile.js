@@ -1,6 +1,16 @@
 /* eslint-disable no-console */
 'use strict';
 
+// setInterval(function(){ // eslint-disable-line
+//   let memory = process.memoryUsage();
+//   let date = new Date();
+//   console.log(`[${addZero(date.getHours())}:${addZero(date.getMinutes())}:${addZero(date.getSeconds())}]`, 'Memory usage (heapUsed):', (memory.heapUsed / 1024 / 1024).toFixed(2) + 'Mb');
+// }, 1000 * 10);
+//
+// function addZero(i) {
+//   return (i < 10) ? i = "0" + i : i;
+// }
+
 // Пакеты, использующиеся при обработке
 const {series, parallel, src, dest, watch, lastRun} = require('gulp');
 const fs = require('fs');
@@ -11,6 +21,7 @@ const through2 = require('through2');
 const plumber = require('gulp-plumber');
 const rename = require('gulp-rename');
 const prettyHtml = require('gulp-pretty-html');
+const replace = require('gulp-replace');
 const browserSync = require('browser-sync').create();
 const getClassesFromHtml = require('get-classes-from-html');
 const sass = require('gulp-sass');  //компиляция scss
@@ -36,7 +47,7 @@ const webpackStream = require('webpack-stream');
 // Глобальные настройки запуска
 const nth = {};
 nth.config = require('./config.js');
-nth.blocksFromHtml = []; // Блоки из html (только если имеют свою папку блока)
+nth.blocksFromHtml = nth.config.alwaysAddBlocks; // блоки из конфига сразу добавим в список блоков
 nth.scssImportsList = []; // Список импортов стилей
 const dir = nth.config.dir;
 
@@ -53,7 +64,7 @@ let pugOption = {
 let prettyOption = {
   indent_size: 2,
   indent_char: ' ',
-  unformatted: ['code', 'em', 'strong', 'span', 'i', 'b', 'br'],
+  unformatted: ['code', 'em', 'strong', 'span', 'i', 'b', 'br', 'script'],
   content_unformatted: []
 };
 
@@ -92,6 +103,9 @@ function compilePug() {
     .pipe(debug({title: 'Compiles '}))
     .pipe(pug(pugOption))
     .pipe(prettyHtml(prettyOption))
+    .pipe(replace(/^(\s*)(<button.+?>)(.*)(<\/button>)/gm, '$1$2\n$1  $3\n$1$4'))
+    .pipe(replace(/^( *)(<.+?>)(<script>)([\s\S]*)(<\/script>)/gm, '$1$2\n$1$3\n$4\n$1$5\n'))
+    .pipe(replace(/^( *)(<.+?>)(<script\s+src.+>)(?:[\s\S]*)(<\/script>)/gm, '$1$2\n$1$3$4'))
     .pipe(through2.obj(getClassesToBlocksList))
     .pipe(dest(dir.build));
 }
@@ -110,6 +124,9 @@ function compilePugFast() {
     .pipe(debug({title: 'Compiles '}))
     .pipe(pug(pugOption))
     .pipe(prettyHtml(prettyOption))
+    .pipe(replace(/^(\s*)(<button.+?>)(.*)(<\/button>)/gm, '$1$2\n$1  $3\n$1$4'))
+    .pipe(replace(/^( *)(<.+?>)(<script>)([\s\S]*)(<\/script>)/gm, '$1$2\n$1$3\n$4\n$1$5\n'))
+    .pipe(replace(/^( *)(<.+?>)(<script\s+src.+>)(?:[\s\S]*)(<\/script>)/gm, '$1$2\n$1$3$4'))
     .pipe(through2.obj(getClassesToBlocksList))
     .pipe(dest(dir.build));
 }
@@ -136,10 +153,14 @@ function copyImg(cb) {
     let src = `${dir.blocks}${block}/img`;
     if (fileExist(src)) copiedImages.push(src);
   });
-  (async () => {
-    await cpy(copiedImages, `${dir.build}img`);
+  if (copiedImages.length) {
+    (async () => {
+      await cpy(copiedImages, `${dir.build}img`);
+      cb();
+    })();
+  } else {
     cb();
-  })();
+  }
 }
 
 exports.copyImg = copyImg;
@@ -457,7 +478,7 @@ function getClassesToBlocksList(file, enc, cb) {
   if (processThisFile) {
     const fileContent = file.contents.toString();
     let classesInFile = getClassesFromHtml(fileContent);
-    nth.blocksFromHtml = [];
+    // nth.blocksFromHtml = [];
     // Обход всех найденных классов
     for (let item of classesInFile) {
       // Если это не блок или этот блок уже есть, пропуск
@@ -470,7 +491,7 @@ function getClassesToBlocksList(file, enc, cb) {
       nth.blocksFromHtml.push(item);
     }
     console.log('---------- Used HTML blocks:   ' + nth.blocksFromHtml.join(', '));
-    file.contents = Buffer.from(fileContent);
+    file.contents = new Buffer.from(fileContent);
   }
   this.push(file);
   cb();
@@ -484,7 +505,7 @@ function filterShowCode(text, options) {
   let result = '<pre class="code">\n';
   if (typeof (options['first-line']) !== 'undefined') result = result + '<code>' + options['first-line'] + '</code>\n';
   for (let i = 0; i < (lines.length - 1); i++) { // (lines.length - 1) для срезания последней строки (пустая)
-    result = result + '<code>' + lines[i] + '</code>\n';
+    result = result + '<code>' + lines[i].replace(/</gm, '&lt;') + '</code>\n';
   }
   result = result + '</pre>\n';
   result = result.replace(/<code><\/code>/g, '<code>&nbsp;</code>');
