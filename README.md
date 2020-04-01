@@ -23,6 +23,8 @@ npm run test       # проверка всех pug-, scss- и js-файлов н
 npm run test:pug   # проверить только pug-файлы
 npm run test:style # проверить только scss-файлы
 npm run test:js    # проверить только js-файлы
+npm run img:opt    # оптимизировать изображения
+npm run critical   # добавить критический css к html-файлам
 ```
 
 
