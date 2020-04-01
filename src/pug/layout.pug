@@ -33,12 +33,13 @@ html(class='no-js', lang='ru')
 
   body
 
-    block header
-      p.nothing шапка
+    +page-header()
+      block nav
     block content
       p содержимое
-    block footer
+    +page-footer()
       p подвал
+      block footer
 
     block page-bottom
       script(src='js/bundle.js')

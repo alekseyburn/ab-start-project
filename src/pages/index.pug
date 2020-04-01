@@ -7,16 +7,14 @@ block meta
 //- block append head
 //-   link(rel='stylesheet', href='css/some.css')
 
-block header
-  +page-header()
-    p.hello Привет
+block nav
+  p.nothing test
 
 block content
   h1 Заголовок с каким-то эффектом
   p Содержимое. #[a(href='blocks-demo.html') Библиотека блоков].
 
 block footer
-  +page-footer()
     p «Подвал»
     p Контактный телефон: #[a(href='tel:+70000000000') +7 000 000 00 00]
 

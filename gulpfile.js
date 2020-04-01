@@ -47,7 +47,7 @@ const webpackStream = require('webpack-stream');
 // Глобальные настройки запуска
 const nth = {};
 nth.config = require('./config.js');
-nth.blocksFromHtml = nth.config.alwaysAddBlocks; // блоки из конфига сразу добавим в список блоков
+nth.blocksFromHtml = Object.create(nth.config.alwaysAddBlocks); // блоки из конфига сразу добавим в список блоков
 nth.scssImportsList = []; // Список импортов стилей
 const dir = nth.config.dir;
 
@@ -225,10 +225,17 @@ function writeSassImportsFile(cb) {
   nth.config.addStyleBefore.forEach((src) => {
     newScssImportsList.push(src);
   });
+  nth.config.alwaysAddBlocks.forEach((blockName) => {
+    if (fileExist(`${dir.blocks}${blockName}/${blockName}.scss`)) {
+      newScssImportsList.push(`${dir.blocks}${blockName}/${blockName}.scss`);
+    }
+  });
   let allBlocksWithScssFiles = getDirectories('scss');
   allBlocksWithScssFiles.forEach(function (blockWithScssFile) {
+    let url = `${dir.blocks}${blockWithScssFile}/${blockWithScssFile}.scss`;
     if (nth.blocksFromHtml.indexOf(blockWithScssFile) === -1) return;
-    newScssImportsList.push(`${dir.blocks}${blockWithScssFile}/${blockWithScssFile}.scss`);
+    if (newScssImportsList.indexOf(url) > -1) return;
+    newScssImportsList.push(url);
   });
   nth.config.addStyleAfter.forEach((src) => {
     newScssImportsList.push(src);
@@ -254,7 +261,7 @@ function compileSass() {
   return src(`${dir.src}sass/style.scss`, {sourcemaps: true})
     .pipe(plumber())
     .pipe(debug({title: 'Compiles:'}))
-    .pipe(sass({includePaths: [__dirname + '/']}))
+    .pipe(sass({includePaths: [__dirname + '/', 'node_modules']}))
     .pipe(postcss(postCssPlugins))
     .pipe(dest(`${dir.build}/css`, {sourcemaps: '.'}))
     .pipe(browserSync.stream());
@@ -263,18 +270,27 @@ function compileSass() {
 exports.compileSass = compileSass;
 
 function writeJsRequiresFile(cb) {
-  let msg = `\n/*!*${doNotEditMsg.replace(/\n /gm, '\n * ').replace(/\n\n$/, '\n */\n\n')}`;
-  let jsRequires = msg;
+  const jsRequiresList = [];
   nth.config.addJsBefore.forEach((src) => {
-    jsRequires += `require('${src}');\n`;
+    jsRequiresList.push(src);
   });
   const allBlocksWithJsFiles = getDirectories('js');
-  const allUsedBlocks = nth.blocksFromHtml.concat(nth.config.alwaysAddBlocks);
-  allBlocksWithJsFiles.forEach(function (blockWithJsFile) {
-    if (allUsedBlocks.indexOf(blockWithJsFile) === -1) return;
-    jsRequires += `require('../blocks/${blockWithJsFile}/${blockWithJsFile}.js');\n`;
+  allBlocksWithJsFiles.forEach((blockName) => {
+    if (nth.config.alwaysAddBlocks.indexOf(blockName) === -1) return;
+    jsRequiresList.push(`../blocks/${blockName}/${blockName}.js`)
+  });
+  allBlocksWithJsFiles.forEach((blockName) => {
+    let src = `../blocks/${blockName}/${blockName}.js`;
+    if (nth.blocksFromHtml.indexOf(blockName) === -1) return;
+    if (jsRequiresList.indexOf(src) > -1) return;
+    jsRequiresList.push(src);
   });
   nth.config.addJsAfter.forEach((src) => {
+    jsRequiresList.push(src);
+  });
+  let msg = `\n/*!*${doNotEditMsg.replace(/\n /gm, '\n * ').replace(/\n\n$/, '\n */\n\n')}`;
+  let jsRequires = msg;
+  jsRequiresList.forEach((src) => {
     jsRequires += `require('${src}');\n`;
   });
   jsRequires += msg;

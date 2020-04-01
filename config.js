@@ -1,43 +1,45 @@
 // Файл перезаписывается программно при работе автоматизации
 
-let config =
-  {
-    "notGetBlocks": [
-      "blocks-demo.html"
-    ],
-    "ignoredBlocks": [
-      "no-js"
-    ],
-    "alwaysAddBlocks": [
-      "sprite-svg",
-      // "sprite-png",
-      // "object-fit-polyfill",
-    ],
-    "addStyleBefore": [
-      "src/sass/variables.scss",
-      "src/sass/mixins.scss",
-      "src/sass/fonts.scss",
-      "src/sass/visually-hidden.scss"
-    ],
-    "addStyleAfter": [
-      "src/sass/scaffolding.scss"
-    ],
-    "addJsBefore": [],
-    "addJsAfter": [
-      "./script.js"
-    ],
-    "addAssets": {
-      // "src/img/avatar-*": "img/",
-      // "src/img/DSSC_*": "img/",
-      "src/fonts/sample.woff2": "fonts/",
-      "src/img/demo-*.{png,svg,jpg,jpeg}": "img/",
-      // "src/favicon/*.{png,ico,svg,xml,webmanifest}": "img/favicon"
-    },
-    "dir": {
-      "src": "src/",
-      "build": "build/",
-      "blocks": "src/blocks/"
-    }
-  };
+let config = {
+  'notGetBlocks': [
+    'blocks-demo.html'
+  ],
+  'ignoredBlocks': [
+    'no-js'
+  ],
+  'alwaysAddBlocks': [
+    'sprite-svg',
+    // 'sprite-png',
+    // 'object-fit-polyfill',
+  ],
+  'addStyleBefore': [
+    'src/sass/variables.scss',
+    'src/sass/mixins.scss',
+    'src/sass/fonts.scss',
+    'src/sass/visually-hidden.scss',
+    // 'somePackage/dist/somePackage.css', // для 'node_modules/somePackage/dist/somePackage.css',
+  ],
+  'addStyleAfter': [
+    'src/sass/scaffolding.scss'
+  ],
+  'addJsBefore': [
+    // 'somePackage/dist/somePackage.js', // для 'node_modules/somePackage/dist/somePackage.js',
+  ],
+  'addJsAfter': [
+    './script.js'
+  ],
+  'addAssets': {
+    // 'src/img/avatar-*': 'img/',
+    'src/fonts/sample.woff2': 'fonts/',
+    'src/img/*.{png,svg,jpg,jpeg}': 'img/',
+    // 'src/favicon/*.{png,ico,svg,xml,webmanifest}': 'img/favicon',
+    // 'node_modules/somePackage/images/*.{png,svg,jpg,jpeg}': 'img/',
+  },
+  'dir': {
+    'src': 'src/',
+    'build': 'build/',
+    'blocks': 'src/blocks/'
+  }
+};
 
 module.exports = config;
