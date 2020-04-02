@@ -18,7 +18,7 @@
     "deploy": "cross-env gulp build && gulp deploy",
     "img:opt": "gulp optimizeImages",
     "critical": "gulp criticalCssToHtml",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged --no-stash"
   },
   "lint-staged": {
     "*.scss": "stylelint --syntax=scss",

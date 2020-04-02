@@ -1,0 +1,80 @@
+// Коррекция для кликабельных элементов с указанной ролью в iOS
+[role="button"] {
+  cursor: pointer;
+}
+
+// Мы любим Сафари (на самом деле, нет).
+[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none; // stylelint-disable-line
+}
+
+// area,
+// summary,
+a,
+button,
+[role="button"],
+input,
+label,
+select,
+textarea {
+  margin: 0;                  // Убираем margin в Firefox и Safari
+
+  touch-action: manipulation; // Стилевая коррекция 300ms задержки (для поддерживающих браузеров)
+}
+
+button,
+input {
+  overflow: visible;    // Покажем торчащее в Edge
+
+  text-transform: none; // Уберём наследование text transform в Firefox
+}
+
+// Коррекция проблем стилизации для Safari
+button,
+html [type="button"],
+[type="reset"],
+[type="submit"] {
+  -webkit-appearance: button; // stylelint-disable-line
+}
+
+button::-moz-focus-inner,
+[type="button"]::-moz-focus-inner,
+[type="reset"]::-moz-focus-inner,
+[type="submit"]::-moz-focus-inner {
+  padding: 0;
+
+  border-style: none;
+}
+
+// Коррекция для Mobile Safari (https://github.com/twbs/bootstrap/issues/11266)
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"] {
+  -webkit-appearance: listbox; // stylelint-disable-line
+}
+
+textarea {
+  overflow: auto;   // Удаление верт. скролла в IE.
+
+  resize: vertical; // Правильное изменение размеров
+}
+
+svg {
+  fill: currentColor;
+
+  a &,
+  button & {
+    pointer-events: none; // Мы любим Edge, это браузер! (почти)
+  }
+
+  &:not(:root) {
+    overflow: hidden; // Скрыть выступающее за границы в IE
+  }
+}
+
+//hr {
+//  box-sizing: content-box; // Проблема Firefox
+//  height: 0;               // Проблема Firefox
+//  overflow: visible;       // Проблема Edge и IE
+//}

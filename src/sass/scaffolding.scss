@@ -17,46 +17,33 @@ img {
   height: auto;
 }
 
-// We love Safari
-input[type='search'] {
-  -webkit-appearance: textfield; // stylelint-disable-line  property-no-vendor-prefix
-}
-
-// Avoid 300ms click delay on touch devices that support the `touch-action` CSS property.
-a,
-  // area,
-button,
-[role='button'],
-input,
-label,
-select,
-  // summary,
-textarea {
-  touch-action: manipulation;
-}
-
-svg {
-  a &,
-  button & {
-    pointer-events: none; // We love EDGE! This is a browser!
-  }
-
-  &:not(:root) {
-    overflow: hidden; // Скрыть выступающее за границы в IE
-  }
-}
-
 body {
+  display: flex;           // Исправляем баг в IE для min-height and flexbox (flex-direction:column)
+  flex-direction: column;  // и прижимаем footer в IE 10-11
   min-width: $mobile-width;
+  min-height: 100%;
   margin: 0 auto;
 
   font-weight: normal;
-  font-size: 10px;
-  line-height: 150%;
+  font-size: $font-size;
+  line-height: $line-height;
   font-family: $font;
   color: $main-text;
+  word-break: break-word;
 
   background-color: $main-bg;
-  background-repeat: no-repeat;
-  background-size: contain;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+p {
+  // http://clagnut.com/blog/2395
+  // https://habr.com/ru/post/445166/
+  hyphens: auto;
+
+  hyphenate-limit-chars: 6 3 3;
+  hyphenate-limit-last: always;
+  hyphenate-limit-lines: 2;
+  hyphenate-limit-zone: 8%;
 }

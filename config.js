@@ -17,6 +17,7 @@ let config = {
     'src/sass/mixins.scss',
     'src/sass/fonts.scss',
     'src/sass/visually-hidden.scss',
+    'src/sass/corrections.scss'
     // 'somePackage/dist/somePackage.css', // для 'node_modules/somePackage/dist/somePackage.css',
   ],
   'addStyleAfter': [
