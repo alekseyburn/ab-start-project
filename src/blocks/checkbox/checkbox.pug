@@ -6,7 +6,7 @@ mixin checkbox(checkboxes)
   //-     {object}
   //-       title: ''         {string} - текст рядом с чекбоксом
   //-       helpText: ''      {string} - пояснение под полем
-  //-       classes: ''          {string} - модификаторы обертки чекбокса
+  //-       classes: ''          {string} - классы чекбокса
   //-       attrs:            {object} - любые атрибуты для input
   //-         name:           {string}
   //-     ...
@@ -42,11 +42,11 @@ mixin checkbox(checkboxes)
 
   each checkbox in checkboxes
     -
-      var allClasses = '';
+      let allClasses = '';
       if (typeof (checkbox.classes) !== 'undefined' && checkbox.classes) {
-        var classesList = checkbox.classes.split(',');
-        for (var i = 0; i < classesList.length; i++) {
-          allClasses = allClasses + classesList[i].trim();
+        const classesList = checkbox.classes.split(',');
+        for (let item of classesList) {
+          allClasses = allClasses + item.trim();
         }
       }
 

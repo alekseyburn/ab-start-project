@@ -6,7 +6,7 @@ mixin radio(radiobuttons)
   //-     {object}
   //-       title: ''         {string} - текст рядом с радиокнопкой
   //-       helpText: ''      {string} - пояснение под полем
-  //-       classes: ''          {string} - модификаторы обертки радиокнопки
+  //-       classes: ''          {string} - классы радиокнопки
   //-       attrs:            {object} - любые атрибуты для input
   //-         name:           {string}
   //-         ...
@@ -33,11 +33,11 @@ mixin radio(radiobuttons)
 
   each radio in radiobuttons
     -
-      var allClasses = '';
+      let allClasses = '';
       if (typeof (radio.classes) !== 'undefined' && radio.classes) {
-        var classesList = radio.classes.split(',');
-        for (var i = 0; i < classesList.length; i++) {
-          allClasses = allClasses + classesList[i].trim();
+        const classesList = radio.classes.split(',');
+        for (let item of classesList) {
+          allClasses = allClasses + item.trim();
         }
       }
 

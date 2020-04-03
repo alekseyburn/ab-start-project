@@ -1,19 +1,19 @@
 //- Все примеси в этом файле должны начинаться c имени блока (page-footer)
 
-mixin page-footer(mods)
+mixin page-footer(classes)
 
   //- Принимает:
-  //-   mods  {string} - список модификаторов
+  //-   classes  {string} - список классов
   //- Вызов:
         +page-footer()
           p «Подвал»
   -
     //- список модификаторов
-    var allMods = '';
-    if (typeof (mods) !== 'undefined' && mods) {
-      let modsList = mods.split(',');
-      for (let mod of modsList) {
-        allMods = allMods + ' page-footer--' + mod.trim();
+    let allClasses = '';
+    if (typeof (classes) !== 'undefined' && classes) {
+      let classesList = classes.split(',');
+      for (let item of classesList) {
+        allClasses = allClasses + item.trim();
       }
     }
 

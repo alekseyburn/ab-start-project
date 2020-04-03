@@ -1,19 +1,19 @@
 //- Все примеси в этом файле должны начинаться c имени блока (page-header)
 
-mixin page-header(mods)
+mixin page-header(classes)
 
   //- Принимает:
-  //-   mods  {string} - список модификаторов
+  //-   classes  {string} - список классов
   //- Вызов:
         +page-header()
           p «Шапка»
   -
     //- список модификаторов
-    var allMods = '';
-    if (typeof (mods) !== 'undefined' && mods) {
-      let modsList = mods.split(',');
-      for (let mod of modsList) {
-        allMods = allMods + ' page-header--' + mod.trim();
+    let allClasses = '';
+    if (typeof (classes) !== 'undefined' && classes) {
+      let classesList = classes.split(',');
+      for (let item of classesList) {
+        allClasses = allClasses + item.trim();
       }
     }
 
