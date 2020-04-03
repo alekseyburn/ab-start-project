@@ -18,8 +18,8 @@ img {
 }
 
 body {
-  display: flex;           // Исправляем баг в IE для min-height and flexbox (flex-direction:column)
-  flex-direction: column;  // и прижимаем footer в IE 10-11
+  display: flex; // Исправляем баг в IE для min-height and flexbox (flex-direction:column)
+  flex-direction: column; // и прижимаем footer в IE 10-11
   min-width: $mobile-width;
   min-height: 100%;
   margin: 0 auto;
@@ -46,4 +46,37 @@ p {
   hyphenate-limit-last: always;
   hyphenate-limit-lines: 2;
   hyphenate-limit-zone: 8%;
+}
+
+.svg-test {
+  fill: black;
+  stroke: green;
+}
+
+.test-checkbox {
+  position: relative;
+  appearance: none;
+  //width: 30px;
+  //height: 30px;
+  //background-color: black;
+  //vertical-align: middle;
+
+  &::before {
+    content: '';
+    display: block;
+    width: 100px;
+    height: 100px;
+
+    background: svg-load('../img/Anime_stub_2.svg');
+  }
+
+  &:checked {
+    &::before {
+      background: svg-load('../img/Anime_stub_2.svg', fill=red);
+    }
+  }
+}
+
+.testpicture {
+  @include sprite($rage_ru);
 }

@@ -1,0 +1,57 @@
+//- Все примеси в этом файле должны начинаться c имени блока (checkbox)
+mixin checkbox(checkboxes)
+
+  //- Принимает:
+  //-   checkboxes {array}
+  //-     {object}
+  //-       title: ''         {string} - текст рядом с чекбоксом
+  //-       helpText: ''      {string} - пояснение под полем
+  //-       classes: ''          {string} - модификаторы обертки чекбокса
+  //-       attrs:            {object} - любые атрибуты для input
+  //-         name:           {string}
+  //-     ...
+  //- Вызов:
+        +checkbox([
+          {
+            title: 'Чекбокс0',
+            helpText: 'Подсказка',
+            attrs: {
+              name: 'check0',
+            }
+          },
+        ])
+        +checkbox([
+          {
+            title: 'Чекбокс1',
+            helpText: 'Подсказка',
+            classes: 'error',
+            attrs: {
+              name: 'check1',
+              checked: true,
+            }
+          },
+          {
+            title: 'Чекбокс2',
+            helpText: 'Подсказка',
+            classes: 'error',
+            attrs: {
+              name: 'check2',
+            }
+          },
+        ])
+
+  each checkbox in checkboxes
+    -
+      var allClasses = '';
+      if (typeof (checkbox.classes) !== 'undefined' && checkbox.classes) {
+        var classesList = checkbox.classes.split(',');
+        for (var i = 0; i < classesList.length; i++) {
+          allClasses = allClasses + classesList[i].trim();
+        }
+      }
+
+    label.checkbox(class=allClasses)
+      input.checkbox__input(type='checkbox')&attributes(checkbox.attrs)
+      span.checkbox__name!= checkbox.title
+      if(typeof (checkbox.helpText) !== 'undefined' && checkbox.helpText)
+        p.checkbox__help-text!= checkbox.helpText

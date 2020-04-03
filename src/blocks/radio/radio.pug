@@ -1,0 +1,48 @@
+//- Все примеси в этом файле должны начинаться c имени блока (radio)
+mixin radio(radiobuttons)
+
+  //- Принимает:
+  //-   radiobuttons {array}
+  //-     {object}
+  //-       title: ''         {string} - текст рядом с радиокнопкой
+  //-       helpText: ''      {string} - пояснение под полем
+  //-       classes: ''          {string} - модификаторы обертки радиокнопки
+  //-       attrs:            {object} - любые атрибуты для input
+  //-         name:           {string}
+  //-         ...
+  //- Вызов:
+        +radio([
+          {
+            title: 'Радиокнопка1',
+            helpText: 'Подсказка',
+            classes: '',
+            attrs: {
+              name: 'radio',
+              checked: true,
+            }
+          },
+          {
+            title: 'Радиокнопка2',
+            helpText: 'Подсказка',
+            classes: '',
+            attrs: {
+              name: 'radio',
+            }
+          },
+        ])
+
+  each radio in radiobuttons
+    -
+      var allClasses = '';
+      if (typeof (radio.classes) !== 'undefined' && radio.classes) {
+        var classesList = radio.classes.split(',');
+        for (var i = 0; i < classesList.length; i++) {
+          allClasses = allClasses + classesList[i].trim();
+        }
+      }
+
+    label.radio(class=allClasses)
+      input.radio__input(type='radio')&attributes(radio.attrs)
+      span.radio__name!= radio.title
+      if(typeof (radio.helpText) !== 'undefined' && radio.helpText)
+        p.radio__help-text!= radio.helpText

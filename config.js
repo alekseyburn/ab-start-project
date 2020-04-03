@@ -9,7 +9,7 @@ let config = {
   ],
   'alwaysAddBlocks': [
     'sprite-svg',
-    // 'sprite-png',
+    'sprite-png',
     // 'object-fit-polyfill',
   ],
   'addStyleBefore': [
