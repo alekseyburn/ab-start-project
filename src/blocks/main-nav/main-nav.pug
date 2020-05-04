@@ -1,0 +1,20 @@
+//- Все примеси в этом файле должны начинаться c имени блока (main-nav)
+
+mixin main-nav(classes)
+
+  //- Принимает:
+  //-   classes    {string} - список классов
+  //- Вызов:
+        +main-nav('some-class')
+
+  -
+    // список классов
+    let allClasses = '';
+    if(typeof(classes) !== 'undefined' && classes) {
+      for (let item of classes.split(',')) {
+        allClasses = allClasses + item.trim();
+      }
+    }
+
+  nav(class=`${allClasses.length > 0 ?`${allClasses} `: `` }main-nav`)&attributes(attributes)
+    block

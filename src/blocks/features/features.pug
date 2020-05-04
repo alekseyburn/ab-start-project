@@ -1,0 +1,30 @@
+//- Все примеси в этом файле должны начинаться c имени блока (features)
+
+mixin features(classes)
+
+  //- Принимает:
+  //-   classes    {string} - список классов
+  //- Вызов:
+        +features('some-class')
+
+  -
+    // список классов
+    let allClasses = '';
+    if(typeof(classes) !== 'undefined' && classes) {
+      for (let item of classes.split(',')) {
+        allClasses = allClasses + item.trim();
+      }
+    }
+
+  section.section(class=`${allClasses.length > 0 ?`${allClasses} `: `` }features`)&attributes(attributes)
+    h2.visually-hidden Преимущества
+    ul.features__list
+      li.features__item.features__item--self-made
+        h3.section__subtitle.features__title
+        p.features__text
+      li.features__item.features__item--our
+        h3.section__subtitle.features__title
+        p.features__text
+      li.features__item.features__item--economy
+        h3.section__subtitle.features__title
+        p.features__text

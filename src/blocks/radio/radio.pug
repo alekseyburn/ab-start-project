@@ -35,13 +35,12 @@ mixin radio(radiobuttons)
     -
       let allClasses = '';
       if (typeof (radio.classes) !== 'undefined' && radio.classes) {
-        const classesList = radio.classes.split(',');
-        for (let item of classesList) {
+        for (let item of radio.classes.split(',')) {
           allClasses = allClasses + item.trim();
         }
       }
 
-    label.radio(class=allClasses)
+    label(class=`${allClasses.length > 0 ?`${allClasses} `: `` }radio`)
       input.radio__input(type='radio')&attributes(radio.attrs)
       span.radio__name!= radio.title
       if(typeof (radio.helpText) !== 'undefined' && radio.helpText)

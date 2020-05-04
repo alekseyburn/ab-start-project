@@ -59,13 +59,14 @@ let doNotEditMsg = '\n ВНИМАНИЕ! Этот файл генерирует�
 // Настройки pug-компилятора
 let pugOption = {
   data: {repoUrl: 'https://github.com/alekseyburn/ab-start-project'},
-  filters: {'show-code': filterShowCode}
+  filters: {'show-code': filterShowCode},
 };
 
 // Настройки html-pretty
 let prettyOption = {
   indent_size: 2,
   indent_char: ' ',
+  inline: ['span'],
   unformatted: ['code', 'em', 'strong', 'span', 'i', 'b', 'br', 'script'],
   content_unformatted: []
 };

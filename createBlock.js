@@ -16,7 +16,7 @@ process.argv[n]
 В нашем случае [2] - имя блока, [3-...] - имена расширений
  */
 const blockName = process.argv[2];
-const defaultExtensions = ['scss', 'img']; //расширения по умолчанию
+const defaultExtensions = ['scss', 'pug']; //расширения по умолчанию
 //добавляем к массиву defaultExtensions additional extensions, заданные при вводе run node createBlock, затем удаляем дубликаты
 const extensions = uniqueArray(defaultExtensions.concat(process.argv.slice(3)));
 
@@ -36,7 +36,7 @@ if (blockName) {
       } else if (extension === 'md') {
         fileContent = '';
       } else if (extension === 'pug') {
-        fileContent = `//- Все примеси в этом файле должны начинаться c имени блока (${blockName})\n\nmixin ${blockName}(text, mods)\n\n  //- Принимает:\n  //-   text    {string} - текст\n  //-   mods    {string} - список модификаторов\n  //- Вызов:\n        +${blockName}('Текст', 'some-mod')\n\n  -\n    // список модификаторов\n    var allMods = '';\n    if(typeof(mods) !== 'undefined' && mods) {\n      var modsList = mods.split(',');\n      for (var i = 0; i < modsList.length; i++) {\n        allMods = allMods + ' ${blockName}--' + modsList[i].trim();\n      }\n    }\n\n  .${blockName}(class=allMods)&attributes(attributes)\n    .${blockName}__inner\n      block\n`;
+        fileContent = `//- Все примеси в этом файле должны начинаться c имени блока (${blockName})\n\nmixin ${blockName}(classes)\n\n  //- Принимает:\n  //-   classes    {string} - список классов\n  //- Вызов:\n        +${blockName}('some-class')\n\n  -\n    // список классов\n    let allClasses = '';\n    if(typeof(classes) !== 'undefined' && classes) {\n      for (let item of classes.split(',')) {\n        allClasses = allClasses + item.trim();\n      }\n    }\n\n  div(class=\`\${allClasses.length > 0 ? \`\${allClasses}\` : \`\`}${blockName}\`)&attributes(attributes)\n    block\n`;
       } else if (extension === 'img') {
         const imgFolder = `${dirPath}img/`;
         if (fileExist(imgFolder) === false) {

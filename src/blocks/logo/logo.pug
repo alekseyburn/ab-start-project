@@ -1,0 +1,21 @@
+//- Все примеси в этом файле должны начинаться c имени блока (logo)
+
+mixin logo(href, classes)
+
+  //- Принимает:
+  //-   href    {string} - ссылка
+  //-   classes    {string} - список классов
+  //- Вызов:
+        +logo('/', 'some-class')
+
+  -
+    // список классов
+    let allClasses = '';
+    if(typeof(classes) !== 'undefined' && classes) {
+      for (let item of classes.split(',')) {
+        allClasses = allClasses + item.trim();
+      }
+    }
+
+  a(class=`${allClasses.length > 0 ?`${allClasses} `: `` }logo`, href=href)&attributes(attributes)
+    block

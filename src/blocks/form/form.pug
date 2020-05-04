@@ -1,0 +1,47 @@
+//- Все примеси в этом файле должны начинаться c имени блока (form)
+
+mixin form(classes, formMethod, action)
+
+  //- Принимает:
+  //-   classes    {string} - список классов
+  //-   formMethod    {string} - метод отправки формы
+  //-   action    {string} - куда отправлять форму
+  //- Вызов:
+        +form('some-class','POST','https://sample.com')
+
+  -
+    // список классов
+    let allClasses = '';
+    if(typeof(classes) !== 'undefined' && classes) {
+      for (let item of classes.split(',')) {
+        allClasses = allClasses + item.trim();
+      }
+    }
+
+  form(class=`${allClasses.length > 0 ?`${allClasses} `: `` }form`, method=formMethod, action=action)&attributes(attributes)
+    block
+
+mixin fieldset(legend, classes)
+
+  //- Принимает:
+  //-   legend  {string} - название группы полей
+  //-   classes    {string} - список классов
+  //- Вызов:
+        +fieldset('Название1')
+          +field-text({
+            helpText: 'Подсказка',
+            attrs: {
+              placeholder: 'Пример'
+            }
+          })
+  -
+    // список классов
+    let allClasses = '';
+        if(typeof(classes) !== 'undefined' && classes) {
+          for (let item of classes.split(',')) {
+            allClasses = allClasses + item.trim();
+          }
+        }
+  fieldset(class=`${allClasses.length > 0 ?`${allClasses} `: `` }form__fieldset`)&attributes(attributes)
+    legend.form__legend!= legend
+    block

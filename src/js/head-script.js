@@ -1,4 +1,4 @@
-document.documentElement.className = document.documentElement.className.replace('no-js', 'js');
+document.querySelector('html').classList.remove('no-js');
 function cth(c){document.documentElement.classList.add(c)}
 'ontouchstart' in window?cth('touch'):cth('no-touch');
 if(typeof InstallTrigger!=='undefined')cth('firefox');

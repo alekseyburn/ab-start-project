@@ -18,20 +18,17 @@ img {
 }
 
 body {
-  display: flex; // Исправляем баг в IE для min-height and flexbox (flex-direction:column)
-  flex-direction: column; // и прижимаем footer в IE 10-11
   min-width: $mobile-width;
-  min-height: 100%;
   margin: 0 auto;
 
-  font-weight: normal;
-  font-size: $font-size;
-  line-height: $line-height;
+  font-weight: 500;
+  font-size: var(--text-size);
+  line-height: var(--text-lh);
   font-family: $font;
-  color: $main-text;
+  color: $main-text-color;
   word-break: break-word;
 
-  background-color: $main-bg;
+  background-color: $main-bg-color;
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -48,35 +45,31 @@ p {
   hyphenate-limit-zone: 8%;
 }
 
-.svg-test {
-  fill: black;
-  stroke: green;
-}
-
-.test-checkbox {
-  position: relative;
-  appearance: none;
-  //width: 30px;
-  //height: 30px;
-  //background-color: black;
-  //vertical-align: middle;
-
-  &::before {
-    content: '';
-    display: block;
-    width: 100px;
-    height: 100px;
-
-    background: svg-load('../img/Anime_stub_2.svg');
-  }
-
-  &:checked {
-    &::before {
-      background: svg-load('../img/Anime_stub_2.svg', fill=red);
-    }
-  }
-}
-
-.testpicture {
-  @include sprite($rage_ru);
-}
+//.svg-test {
+//  fill: black;
+//  stroke: green;
+//}
+//
+//.test-checkbox {
+//  position: relative;
+//  appearance: none;
+//  //width: 30px;
+//  //height: 30px;
+//  //background-color: black;
+//  //vertical-align: middle;
+//
+//  &::before {
+//    content: '';
+//    display: block;
+//    width: 100px;
+//    height: 100px;
+//
+//    background: svg-load('../img/Anime_stub_2.svg');
+//  }
+//
+//  &:checked {
+//    &::before {
+//      background: svg-load('../img/Anime_stub_2.svg', fill=red);
+//    }
+//  }
+//}

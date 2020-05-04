@@ -8,14 +8,13 @@ mixin page-footer(classes)
         +page-footer()
           p «Подвал»
   -
-    //- список модификаторов
+    //- список классов
     let allClasses = '';
     if (typeof (classes) !== 'undefined' && classes) {
-      let classesList = classes.split(',');
-      for (let item of classesList) {
+      for (let item of classes.split(',')) {
         allClasses = allClasses + item.trim();
       }
     }
 
-  footer.page-footer(class=allClasses)&attributes(attributes)
+  footer(class=`${allClasses.length > 0 ?`${allClasses} `: `` }page-footer`)&attributes(attributes)
     block

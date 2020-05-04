@@ -1,0 +1,25 @@
+//- Все примеси в этом файле должны начинаться c имени блока (copyright)
+
+mixin copyright(classes)
+
+  //- Принимает:
+  //-   classes    {string} - список классов
+  //- Вызов:
+        +copyright('some-class')
+
+  -
+    // список классов
+    let allClasses = '';
+    if(typeof(classes) !== 'undefined' && classes) {
+      for (let item of classes.split(',')) {
+        allClasses = allClasses + item.trim();
+      }
+    }
+
+  div(class=`${allClasses.length > 0 ?`${allClasses} `: `` }copyright`)&attributes(attributes)
+    a.copyright__link(href='/', target='_blank', rel='noopener noreferrer')
+      picture
+        source(type='image/webp', srcset='/')
+        img.copyright__img.lazyload(data-src='/', width='/', height='/', alt='/', loading='lazy')
+    b.copyright__text
+    span.copyright__company
