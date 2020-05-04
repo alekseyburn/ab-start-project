@@ -1,0 +1,22 @@
+//- Все примеси в этом файле должны начинаться c имени блока (order)
+
+mixin order(classes)
+
+  //- Принимает:
+  //-   classes    {string} - список классов
+  //- Вызов:
+        +order('some-class')
+
+  -
+    // список классов
+    let allClasses = '';
+    if(typeof(classes) !== 'undefined' && classes) {
+      for (let item of classes.split(',')) {
+        allClasses = allClasses + item.trim();
+      }
+    }
+
+  section.section(class=`${allClasses.length > 0 ?`${allClasses} `: `` }order`)&attributes(attributes)
+    h2.section__title.order__title
+    p.order__text
+    block

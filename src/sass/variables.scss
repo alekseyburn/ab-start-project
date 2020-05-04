@@ -1,22 +1,29 @@
-$white: #fff;
-$black: #000;
-$main-text: #8e80a9;
-$main-bg: #fcf8fe;
+:root {
+  --text-size: 16px;
+  --text-size-l: 20px;
+  --text-size-xl: 40px;
+  --text-lh: 30px;
+  --text-lh-l: 30px;
+  --text-lh-xl: 61px;
+  --main-indent: 80px;
+}
 
-$font: "Sample", -apple-system, blinkmacsystemfont, "Roboto", "Ubuntu", "Droid Sans", "Helvetica Neue", "Arial", sans-serif !default;
-$font-size: 10px;
-$line-height: 150%;
+$main-text-color: #404040;
+$alter-text-color: #fff;
+$head-text-color: #000;
 
-$mobile-indent: 35px;
-$tablet-indent: 78px;
-$desktop-indent: 275px;
+$main-bg-color: #fff;
+$alter-bg-color: #ffcb78;
+$neutral-bg-color: #ede5d8;
+
+$accent-color: #834700;
+$accent-color-hover: #6a3900;
+
+$font: "Arial", -apple-system, blinkmacsystemfont, "Roboto", "Ubuntu", "Droid Sans", "Helvetica Neue", sans-serif;
 
 $mobile-width: 320px;
 $tablet-width: 768px;
-$desktop-width: 1440px;
+$desktop-width: 1200px;
 
 $retina-dpi: 144dpi;
 $retina-dppx: 1.5dppx;
-
-$font-size-m: 12px;
-$font-size-l: 16px;

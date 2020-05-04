@@ -13,34 +13,6 @@ block nav
 block content
   h1 Заголовок с каким-то эффектом
   p Содержимое. #[a(href='blocks-demo.html') Библиотека блоков].
-  svg(width='64', height='64')
-    use(xlink:href='img/sprite.svg#logo')
-  svg.svg-test(width='32', height='32')
-    use(xlink:href='img/sprite.svg#icon-heart')
-
-  +checkbox([
-    {
-      title: 'Чекбокс0',
-      helpText: 'Подсказка',
-      classes: 'lol lol2 lol3 test-checkbox',
-      attrs: {
-        name: 'check0',
-      }
-    },
-  ])
-
-  +radio([
-    {
-      title: 'Радиокнопка1',
-      helpText: 'Подсказка',
-      classes: 'kek kek1 kek2',
-      attrs: {
-        name: 'radio',
-      }
-    },
-  ])
-
-  .testpicture hi
 
 block footer
   p «Подвал»

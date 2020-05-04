@@ -8,14 +8,13 @@ mixin page-header(classes)
         +page-header()
           p «Шапка»
   -
-    //- список модификаторов
+    //- список классов
     let allClasses = '';
     if (typeof (classes) !== 'undefined' && classes) {
-      let classesList = classes.split(',');
-      for (let item of classesList) {
+      for (let item of classes.split(',')) {
         allClasses = allClasses + item.trim();
       }
     }
 
-  header.page-header(class=allClasses)&attributes(attributes)
+  header(class=`${allClasses.length > 0 ?`${allClasses} `: `` }page-header`)&attributes(attributes)
     block

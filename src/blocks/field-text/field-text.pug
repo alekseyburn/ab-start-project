@@ -1,0 +1,45 @@
+//- Все примеси в этом файле должны начинаться c имени блока (field-text)
+
+mixin field-text(props)
+
+  //- Принимает:
+  //-   props {
+  //-     label: ''         {string} - текст с названием
+  //-     side: ''          {string} - место расположения текста с названием
+                                      (перед инпутом - up, после инпута - down)
+  //-     isTextarea: false {bool}   - флаг input/textarea
+  //-     classes: ''          {string} - классы блока
+  //-     val: ''           {string} - текст в поле
+  //-     attrs:            {object} - любые атрибуты для input/textarea
+  //-       type:           {string}
+  //-       placeholder:    {string}
+  //- Вызов:
+        +field-text({
+          label: 'Название',
+          side: 'up',
+          isTextarea: true,
+          classes: '',
+          val: '',
+          attrs: {
+            name: 'comment',
+          }
+        })
+
+  -
+    // список классов
+    let allClasses = '';
+    if(typeof(props.classes) !== 'undefined' && props.classes) {
+      for (let item of props.classes.split(',')) {
+        allClasses = allClasses + item.trim();
+      }
+    }
+
+  label(class=`${allClasses.length > 0 ?`${allClasses} `: `` }field-text`)&attributes(attributes)
+    if(typeof (props.label) !== 'undefined' && props.label && props.side === 'up')
+      span.field-text__name!= props.label
+    if(typeof (props.isTextarea) !== 'undefined' && props.isTextarea)
+      textarea.field-text__input.field-text__input--textarea&attributes(props.attrs)= props.val
+    else
+      input.field-text__input(class=`${props.attrs.type ? `field-text__input--${props.attrs.type}` : ``}`, type=(typeof (props.attrs) !== 'undefined' && props.attrs.type) ? props.attrs.type: 'text', value=props.val)&attributes(props.attrs)
+    if(typeof (props.label) !== 'undefined' && props.label && props.side === 'down')
+      span.field-text__name!= props.label

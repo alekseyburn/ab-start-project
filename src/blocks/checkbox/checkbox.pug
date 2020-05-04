@@ -44,14 +44,13 @@ mixin checkbox(checkboxes)
     -
       let allClasses = '';
       if (typeof (checkbox.classes) !== 'undefined' && checkbox.classes) {
-        const classesList = checkbox.classes.split(',');
-        for (let item of classesList) {
+        for (let item of checkbox.classes.split(',')) {
           allClasses = allClasses + item.trim();
         }
       }
 
-    label.checkbox(class=allClasses)
-      input.checkbox__input(type='checkbox')&attributes(checkbox.attrs)
+    label(class=`${allClasses.length > 0 ?`${allClasses} `: `` }checkbox`)
+      input.checkbox__input.visually-hidden(type='checkbox')&attributes(checkbox.attrs)
       span.checkbox__name!= checkbox.title
       if(typeof (checkbox.helpText) !== 'undefined' && checkbox.helpText)
         p.checkbox__help-text!= checkbox.helpText
