@@ -20,8 +20,8 @@ const debug = require('gulp-debug');
 const through2 = require('through2');
 const plumber = require('gulp-plumber');
 const rename = require('gulp-rename');
-const prettyHtml = require('gulp-pretty-html');
-const replace = require('gulp-replace');
+// const prettyHtml = require('gulp-pretty-html');
+// const replace = require('gulp-replace');
 const browserSync = require('browser-sync').create();
 const getClassesFromHtml = require('get-classes-from-html');
 const sass = require('gulp-sass');  //компиляция scss
@@ -58,18 +58,17 @@ let doNotEditMsg = '\n ВНИМАНИЕ! Этот файл генерирует�
 
 // Настройки pug-компилятора
 let pugOption = {
-  data: {repoUrl: 'https://github.com/alekseyburn/ab-start-project'},
-  filters: {'show-code': filterShowCode},
+  data: {repoUrl: 'https://github.com/alekseyburn/Travelly'}
 };
 
 // Настройки html-pretty
-let prettyOption = {
-  indent_size: 2,
-  indent_char: ' ',
-  inline: ['span'],
-  unformatted: ['code', 'em', 'strong', 'span', 'i', 'b', 'br', 'script'],
-  content_unformatted: []
-};
+// let prettyOption = {
+//   indent_size: 2,
+//   indent_char: ' ',
+//   inline: ['span'],
+//   unformatted: ['code', 'em', 'strong', 'span', 'i', 'b', 'br', 'script'],
+//   content_unformatted: []
+// };
 
 // Плагины PostCSS
 let postCssPlugins = [
@@ -105,10 +104,10 @@ function compilePug() {
     }))
     .pipe(debug({title: 'Compiles '}))
     .pipe(pug(pugOption))
-    .pipe(prettyHtml(prettyOption))
-    .pipe(replace(/^(\s*)(<button.+?>)(.*)(<\/button>)/gm, '$1$2\n$1  $3\n$1$4'))
-    .pipe(replace(/^( *)(<.+?>)(<script>)([\s\S]*)(<\/script>)/gm, '$1$2\n$1$3\n$4\n$1$5\n'))
-    .pipe(replace(/^( *)(<.+?>)(<script\s+src.+>)(?:[\s\S]*)(<\/script>)/gm, '$1$2\n$1$3$4'))
+    // .pipe(prettyHtml(prettyOption))
+    // .pipe(replace(/^(\s*)(<button.+?>)(.*)(<\/button>)/gm, '$1$2\n$1  $3\n$1$4'))
+    // .pipe(replace(/^( *)(<.+?>)(<script>)([\s\S]*)(<\/script>)/gm, '$1$2\n$1$3\n$4\n$1$5\n'))
+    // .pipe(replace(/^( *)(<.+?>)(<script\s+src.+>)(?:[\s\S]*)(<\/script>)/gm, '$1$2\n$1$3$4'))
     .pipe(through2.obj(getClassesToBlocksList))
     .pipe(dest(dir.build));
 }
@@ -126,10 +125,10 @@ function compilePugFast() {
     }))
     .pipe(debug({title: 'Compiles '}))
     .pipe(pug(pugOption))
-    .pipe(prettyHtml(prettyOption))
-    .pipe(replace(/^(\s*)(<button.+?>)(.*)(<\/button>)/gm, '$1$2\n$1  $3\n$1$4'))
-    .pipe(replace(/^( *)(<.+?>)(<script>)([\s\S]*)(<\/script>)/gm, '$1$2\n$1$3\n$4\n$1$5\n'))
-    .pipe(replace(/^( *)(<.+?>)(<script\s+src.+>)(?:[\s\S]*)(<\/script>)/gm, '$1$2\n$1$3$4'))
+    // .pipe(prettyHtml(prettyOption))
+    // .pipe(replace(/^(\s*)(<button.+?>)(.*)(<\/button>)/gm, '$1$2\n$1  $3\n$1$4'))
+    // .pipe(replace(/^( *)(<.+?>)(<script>)([\s\S]*)(<\/script>)/gm, '$1$2\n$1$3\n$4\n$1$5\n'))
+    // .pipe(replace(/^( *)(<.+?>)(<script\s+src.+>)(?:[\s\S]*)(<\/script>)/gm, '$1$2\n$1$3$4'))
     .pipe(through2.obj(getClassesToBlocksList))
     .pipe(dest(dir.build));
 }
@@ -200,9 +199,9 @@ function optimizeImages() {
           removeViewBox: false
         }]
       }),
-      imagemin.mozjpeg({quality: 80}),
+      imagemin.mozjpeg({quality: 70}),
       pngquant({
-        quality: [0.6, 0.8],
+        quality: [0.5, 0.8],
         floyd: 1,
         speed: 1
       })
@@ -211,7 +210,7 @@ function optimizeImages() {
   let imgWebp = src(`${dir.src}img/*.{png,jpg,jpeg}`, {since: lastRun(optimizeImages)})
     .pipe(buffer())
     .pipe(webp({
-      quality: 80
+      quality: 70
     }))
     .pipe(dest(`${dir.src}img/`));
   return merge(img, imgWebp);
@@ -227,6 +226,7 @@ function criticalCssToHtml() {
       css: [
         'build/css/style.css',
       ],
+      minify: true,
       dimensions: [
         {
           height: 480,
@@ -573,21 +573,6 @@ function getClassesToBlocksList(file, enc, cb) {
   }
   this.push(file);
   cb();
-}
-
-/**
- * Pug-фильтр, выводящий содержимое pug-файла в виде форматированного текста
- */
-function filterShowCode(text, options) {
-  let lines = text.split('\n');
-  let result = '<pre class="code">\n';
-  if (typeof (options['first-line']) !== 'undefined') result = result + '<code>' + options['first-line'] + '</code>\n';
-  for (let i = 0; i < (lines.length - 1); i++) { // (lines.length - 1) для срезания последней строки (пустая)
-    result = result + '<code>' + lines[i].replace(/</gm, '&lt;') + '</code>\n';
-  }
-  result = result + '</pre>\n';
-  result = result.replace(/<code><\/code>/g, '<code>&nbsp;</code>');
-  return result;
 }
 
 /**

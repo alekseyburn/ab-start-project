@@ -13,7 +13,8 @@ let config = {
   'addStyleBefore': [
     'src/sass/variables.scss',
     'src/sass/mixins.scss',
-    // 'src/sass/fonts.scss',
+    'src/sass/animations.scss',
+    'src/sass/fonts.scss',
     'src/sass/visually-hidden.scss',
     'src/sass/scaffolding.scss'
     // 'src/sass/corrections.scss'
@@ -30,10 +31,11 @@ let config = {
   ],
   'addAssets': {
     // 'src/img/avatar-*': 'img/',
-    // 'src/fonts/sample.woff2': 'fonts/',
+    'src/fonts/*.woff2': 'fonts/',
     'src/img/*.{png,svg,jpg,jpeg}': 'img/',
-    // 'src/favicon/*.{png,ico,svg,xml,webmanifest}': 'img/favicon',
+    'src/favicon/*.{png,ico,svg,xml,webmanifest}': './',
     // 'node_modules/somePackage/images/*.{png,svg,jpg,jpeg}': 'img/',
+    // 'src/img/*.{h264,hevc,av1}.mp4': 'img/',
   },
   'dir': {
     'src': 'src/',
