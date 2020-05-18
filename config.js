@@ -13,7 +13,7 @@ let config = {
   'addStyleBefore': [
     'src/sass/variables.scss',
     'src/sass/mixins.scss',
-    'src/sass/animations.scss',
+    // 'src/sass/animations.scss',
     'src/sass/fonts.scss',
     'src/sass/visually-hidden.scss',
     'src/sass/scaffolding.scss'

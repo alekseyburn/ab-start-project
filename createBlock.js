@@ -30,13 +30,13 @@ if (blockName) {
       let fileContent = '';
       let fileCreateMsg = '';
       if (extension === 'scss') {
-        fileContent = `// В этом файле должны быть стили для БЭМ-блока ${blockName}, его элементов,\n// модификаторов, псевдоселекторов, псевдоэлементов, @media-условий...\n// Очередность: http://nicothin.github.io/idiomatic-pre-CSS/#priority\n\n.${blockName} {\n\n  $block-name:                &; // #{$block-name}__element\n}\n`;
+        fileContent = `// В этом файле должны быть стили для БЭМ-блока ${blockName}, его элементов,\n// модификаторов, псевдоселекторов, псевдоэлементов, @media-условий...\n// Очередность: http://nicothin.github.io/idiomatic-pre-CSS/#priority\n\n.${blockName} {\n}\n`;
       } else if (extension === 'js') {
         fileContent = `/* global document */\n\n// const ready = require('../../js/utils/documentReady.js');\n\n// ready(function(){\n//   \n// });\n`;
       } else if (extension === 'md') {
         fileContent = '';
       } else if (extension === 'pug') {
-        fileContent = `//- Все примеси в этом файле должны начинаться c имени блока (${blockName})\n\nmixin ${blockName}(classes)\n\n  //- Принимает:\n  //-   classes    {string} - список классов\n  //- Вызов:\n        +${blockName}('some-class')\n\n  -\n    // список классов\n    let allClasses = '';\n    if(typeof(classes) !== 'undefined' && classes) {\n      for (let item of classes.split(',')) {\n        allClasses = allClasses + item.trim();\n      }\n    }\n\n  div(class=\`\${allClasses.length > 0 ? \`\${allClasses}\` : \`\`}${blockName}\`)&attributes(attributes)\n    block\n`;
+        fileContent = `//- Все примеси в этом файле должны начинаться c имени блока (${blockName})\n\nmixin ${blockName}(classes)\n\n  //- Принимает:\n  //-   classes    {string} - список классов\n  //- Вызов:\n        +${blockName}('some-class')\n\n  -\n    // список классов\n    let allClasses = '';\n    if(typeof(classes) !== 'undefined' && classes) {\n      for (let item of classes.split(',')) {\n        allClasses = allClasses + item.trim();\n      }\n    }\n\n  div(class=\`\${allClasses.length > 0 ? \`\${allClasses} \` : \`\`}${blockName}\`)&attributes(attributes)\n    block\n`;
       } else if (extension === 'img') {
         const imgFolder = `${dirPath}img/`;
         if (fileExist(imgFolder) === false) {

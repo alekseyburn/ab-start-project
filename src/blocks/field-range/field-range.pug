@@ -1,0 +1,44 @@
+//- Все примеси в этом файле должны начинаться c имени блока (field-range)
+
+mixin field-range(props)
+
+  //- Принимает:
+  //-   props {
+  //-     label: ''         {string} - текст с названием
+  //-     side: ''          {string} - место расположения текста с названием
+                                      (перед инпутом - up, после инпута - down)
+  //-     classes: ''       {string} - классы блока
+  //-       mod:            {string} - модификатор
+  //-     attrs:            {object} - любые атрибуты для input
+  //-       min:            {string} - минимальное значение
+  //-       max:            {string} - максимальное значение
+  //-       step:           {string} - шаг
+  //- Вызов:
+          +field-text({
+            label: 'Название',
+            side: 'up',
+            classes: '',
+            mod: 'hue'
+            attrs: {
+              min: '0',
+              max: '360',
+              step: '1',
+              name: 'hue',
+            }
+          })
+
+  -
+    // список классов
+    let allClasses = '';
+    if (typeof (props.classes) !== 'undefined' && props.classes) {
+      for (let item of props.classes.split(',')) {
+        allClasses = allClasses + item.trim();
+      }
+    }
+
+  label(class=`${allClasses.length > 0 ? `${allClasses} ` : ``}field-range`)&attributes(attributes)
+    if(typeof (props.label) !== 'undefined' && props.label && props.side === 'up')
+      span.field-range__name!= props.label
+    input.field-range__input(class=`field-range__input--${props.mod}`, type='range')&attributes(props.attrs)
+    if(typeof (props.label) !== 'undefined' && props.label && props.side === 'down')
+      span.field-range__name!= props.label
